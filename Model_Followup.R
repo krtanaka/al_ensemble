@@ -4,306 +4,479 @@
 # if models were successful in the past, and if so, retrieves the necessay information for the paper. If they were discarded
 # in the past, it reruns only those parts that are necessary to the paper. 
 
+rm(list = ls())
 
 library(EFHSDM)
 library(raster)
 library(maxnet)
 
-EFH.path<-"Y:/RACE_EFH_variables"
+EFH.path <- "/Users/kisei.tanaka/Desktop/10211730"
 
-masterplan<-read.csv("Y:/RACE_EFH_variables/Masterplan.csv")
+masterplan<-read.csv("/Users/kisei.tanaka/Desktop/10211730/Masterplan.csv")
 
-# out.table<-data.frame(Region=vector(),Species=vector(),Lifestage=vector(),Model=vector(),N=vector(),
-#                       Weight=vector(),Scale=vector(),RMSE=vector(),cvRMSE=vector(),Rho=vector(),
-#                       cvRho=vector(),AUC=vector(),PDE=vector(),cvPDE=vector(),Prob_Area=vector(),
-#                       Abund_Area=vector(),C_Area=vector())
+out.table <- data.frame(
+  Region = vector(), 
+  Species = vector(), 
+  Lifestage = vector(), 
+  Model = vector(), 
+  N = vector(), 
+  Weight = vector(), 
+  Scale = vector(), 
+  RMSE = vector(), 
+  cvRMSE = vector(), 
+  Rho = vector(), 
+  cvRho = vector(), 
+  AUC = vector(), 
+  PDE = vector(), 
+  cvPDE = vector(), 
+  Prob_Area = vector(), 
+  Abund_Area = vector(), 
+  C_Area = vector()
+)
 
-out.table<-read.csv(paste0(EFH.path,"/Trawl_Models2/Metrics_all_models.csv"))
-
+out.table <- read.csv(paste0(EFH.path,"/Trawl_Models2/Metrics_all_models.csv"))
 
 for(r in 1:3){
-  region<-c("AI","EBS","GOA")[r]
+  
+  r = 1
+  
+  region <- c("AI","EBS","GOA")[r]
   
   # First the setup
-  bathy <- raster::raster(paste0(EFH.path,"/Variables/Variables_",region,"_1km/Bathy"))
-  slope <- raster::raster(paste0(EFH.path,"/Variables/Variables_",region,"_1km/Slope"))
-  tmax <- raster::raster(paste0(EFH.path,"/Variables/Variables_",region,"_1km/Tmax"))
-  btemp <- raster::raster(paste0(EFH.path,"/Variables/Variables_",region,"_1km/Btemp"))
-  btemp<-raster::crop(x = btemp,y=bathy)
-  BPI <- raster::raster(paste0(EFH.path,"/Variables/Variables_",region,"_1km/BPI"))
-  BPI<-raster::crop(x = BPI,y=bathy)
-  Curve <- raster::raster(paste0(EFH.path,"/Variables/Variables_",region,"_1km/Curve_Mean"))
-  AspectE <- raster::raster(paste0(EFH.path,"/Variables/Variables_",region,"_1km/Aspect_East"))
-  AspectN <- raster::raster(paste0(EFH.path,"/Variables/Variables_",region,"_1km/Aspect_North"))
+  bathy <- raster::raster(paste0(EFH.path, "/Variables/Variables_", region, "_1km/Bathy"))
+  slope <- raster::raster(paste0(EFH.path, "/Variables/Variables_", region, "_1km/Slope"))
+  tmax <- raster::raster(paste0(EFH.path, "/Variables/Variables_", region, "_1km/Tmax"))
+  btemp <- raster::raster(paste0(EFH.path, "/Variables/Variables_", region, "_1km/Btemp"))
+  btemp <- raster::crop(x = btemp, y = bathy)
+  BPI <- raster::raster(paste0(EFH.path, "/Variables/Variables_", region, "_1km/BPI"))
+  BPI <- raster::crop(x = BPI, y = bathy)
+  Curve <- raster::raster(paste0(EFH.path, "/Variables/Variables_", region, "_1km/Curve_Mean"))
+  AspectE <- raster::raster(paste0(EFH.path, "/Variables/Variables_", region, "_1km/Aspect_East"))
+  AspectN <- raster::raster(paste0(EFH.path, "/Variables/Variables_", region, "_1km/Aspect_North"))
   
-  lat <- raster::init(bathy, v ='y')
-  lat <- raster::mask(lat, bathy,overwrite = F)
-  lon <- raster::init(bathy, v ='x')
-  lon <- raster::mask(lon, bathy,overwrite = F)
-  coral <- raster::raster(paste0(EFH.path,"/Variables/Variables_",region,"_1km/Coralfactor"))
-  sponge <- raster::raster(paste0(EFH.path,"/Variables/Variables_",region,"_1km/Spongefactor"))
-  whips <- raster::raster(paste0(EFH.path,"/Variables/Variables_",region,"_1km/Whipsfactor"))
+  lat <- raster::init(bathy, v = 'y')
+  lat <- raster::mask(lat, bathy, overwrite = FALSE)
+  lon <- raster::init(bathy, v = 'x')
+  lon <- raster::mask(lon, bathy, overwrite = FALSE)
+  coral <- raster::raster(paste0(EFH.path, "/Variables/Variables_", region, "_1km/Coralfactor"))
+  sponge <- raster::raster(paste0(EFH.path, "/Variables/Variables_", region, "_1km/Spongefactor"))
+  whips <- raster::raster(paste0(EFH.path, "/Variables/Variables_", region, "_1km/Whipsfactor"))
   
-  east<-raster::raster(paste0(EFH.path,"/Variables/Variables_",region,"_1km/ROMSbcurrentEastings"))
-  north<-raster::raster(paste0(EFH.path,"/Variables/Variables_",region,"_1km/ROMSbcurrentNorthings"))
-  eastSD<-raster::raster(paste0(EFH.path,"/Variables/Variables_",region,"_1km/ROMSbEastingsSD"))
-  northSD<-raster::raster(paste0(EFH.path,"/Variables/Variables_",region,"_1km/ROMSbNorthingsSD"))
-  if(region=="EBS"){
-    phi <- raster::raster(paste0(EFH.path,"/Variables/Variables_EBS_1km/phi"))
+  east <- raster::raster(paste0(EFH.path, "/Variables/Variables_", region, "_1km/ROMSbcurrentEastings"))
+  north <- raster::raster(paste0(EFH.path, "/Variables/Variables_", region, "_1km/ROMSbcurrentNorthings"))
+  eastSD <- raster::raster(paste0(EFH.path, "/Variables/Variables_", region, "_1km/ROMSbEastingsSD"))
+  northSD <- raster::raster(paste0(EFH.path, "/Variables/Variables_", region, "_1km/ROMSbNorthingsSD"))
+  
+  if (region == "EBS") {
     
-    raster.stack <- raster::stack(lon,lat,bathy,slope,AspectE,AspectN,Curve,btemp,east,north,eastSD,northSD,tmax,phi,BPI, sponge, coral, whips)
-    names(raster.stack) <- c("lon","lat","bdepth","slope","aspectE","aspectN","curve","btemp","bcurrentU","bcurrentV",
-                             "bcurrentUSD","bcurrentVSD", "tmax","phi","BPI","sponge","coral","pen")
+    phi <- raster::raster(paste0(EFH.path, "/Variables/Variables_EBS_1km/phi"))
+    
+    raster.stack <- raster::stack(
+      lon,
+      lat,
+      bathy,
+      slope,
+      # AspectE,
+      # AspectN,
+      # Curve,
+      btemp,
+      # east,
+      # north,
+      # eastSD,
+      # northSD,
+      tmax,
+      phi,
+      BPI,
+      sponge,
+      coral,
+      whips
+    )
+    
+    names(raster.stack) <- c(
+      "lon",
+      "lat",
+      "bdepth",
+      "slope",
+      # "aspectE",
+      # "aspectN",
+      # "curve",
+      "btemp",
+      # "bcurrentU",
+      # "bcurrentV",
+      # "bcurrentUSD",
+      # "bcurrentVSD",
+      "tmax",
+      "phi",
+      "BPI",
+      "sponge",
+      "coral",
+      "pen"
+    )
+    
   }
+  
+  
   # GOA and AI don't have sediment grabs to calculate phi, so there is a "rockiness" variable instead
   if(region%in%c("AI","GOA")){
-    rocky<-raster::raster(paste0(EFH.path,"/Variables/Variables_",region,"_1km/rocky"))
     
+    rocky <- raster::raster(paste0(EFH.path,"/Variables/Variables_",region,"_1km/rocky"))
     raster.stack <- raster::stack(lon,lat,bathy,slope,AspectE,AspectN,Curve,btemp,east,north,eastSD,northSD,tmax,rocky,BPI, sponge, coral, whips)
-    names(raster.stack) <- c("lon","lat","bdepth","slope","aspectE","aspectN","curve","btemp","bcurrentU","bcurrentV",
-                             "bcurrentUSD","bcurrentVSD", "tmax","rocky","BPI","sponge","coral","pen")
+    
+    raster.stack <- raster::stack(lon,lat,bathy,slope,btemp,tmax,BPI, sponge, coral, whips)
+    
+    names(raster.stack) <- c("lon","lat","bdepth","slope","btemp","tmax","BPI","sponge","coral","pen")
+    
   }
   
-  ak.raster<-raster::raster(paste0(EFH.path,"/Variables/",region,"_Alaska_raster"))
+  ak.raster <- raster::raster(paste0(EFH.path,"/Variables/", region, "_Alaska_raster"))
   
   if(region=="GOA"){
+    
     GOA.mask<-raster::raster(paste0(EFH.path,"/Variables/GOA_mask_raster"))
     raster.stack<-raster::mask(raster.stack,GOA.mask)
-    ak.raster<-NULL
+    ak.raster <- NULL
+    
   }
   
   # Load the data
-  region.data<-utils::read.csv(paste0(EFH.path,"/Trawl_Models2/",region,"/all_",region,"_data_2021.csv"))
+  # region.data<-utils::read.csv(paste0(EFH.path,"/Trawl_Models2/",region,"/all_",region,"_data_2021.csv"))
+  region.data <- subset(region_data_all, year >= 2012)
+  region.data$sponge <- as.integer(region.data$sponge > 0)
+  region.data$logarea <- log(region.data$area)
   
   # small adjustment for the REBS complex
-  region.data$j_rebs<-region.data$j_rebs+region.data$j_rough+region.data$j_bspot
-  region.data$a_rebs<-region.data$a_rebs+region.data$a_rough+region.data$a_bspot
+  region.data$j_rebs <- region.data$j_rebs + region.data$j_rough + region.data$j_bspot
+  region.data$a_rebs <- region.data$a_rebs + region.data$a_rough + region.data$a_bspot
   
-  # FOr now, we will leave the weights of the SFIs in the data set, but we are using it as a binary variable for the analysis
-  region.data$sponge<-as.factor(as.integer(region.data$sponge>0))
-  region.data$coral<-as.factor(as.integer(region.data$coral>0))
-  region.data$pen<-as.factor(as.integer(region.data$pen>0))
+  # For now, we will leave the weights of the SFIs in the dataset, but we are using it as a binary variable for the analysis
+  region.data$sponge <- as.factor(as.integer(region.data$sponge > 0))
+  region.data$coral <- as.factor(as.integer(region.data$coral > 0))
+  region.data$pen <- as.factor(as.integer(region.data$pen > 0))
   
-  region.data$logarea<-log(region.data$area)
+  region.data$logarea <- log(region.data$area)
   
-  off.raster<-raster::raster(bathy)
-  off.raster<-raster::setValues(off.raster,values = mean(region.data$logarea))
-  names(off.raster)<-"logarea"
-  raster.stack2<-stack(raster.stack,off.raster)
+  off.raster <- raster::raster(bathy)
+  off.raster <- raster::setValues(off.raster, values = mean(region.data$logarea))
+  names(off.raster) <- "logarea"
+  raster.stack2 <- stack(raster.stack, off.raster)
   
-  r.vals<-getValues(raster.stack2)
-  r.vals2<-as.data.frame(r.vals)
-  r.vals2$sponge<-as.factor(r.vals2$sponge)
-  r.vals2$coral<-as.factor(r.vals2$coral)
-  r.vals2$pen<-as.factor(r.vals2$pen)
+  r.vals <- getValues(raster.stack2)
+  r.vals2 <- as.data.frame(r.vals)
+  r.vals2$sponge <- as.factor(r.vals2$sponge)
+  r.vals2$coral <- as.factor(r.vals2$coral)
+  r.vals2$pen <- as.factor(r.vals2$pen)
   
   rm(lat,lon,bathy,slope,tmax,btemp,BPI,AspectN,AspectE,sponge,coral,whips,Curve,phi,rocky,east,eastSD,north,northSD,r.vals)
   
-  covars2d<-list(c("lon","lat"),c("bcurrentU","bcurrentV"),c("bcurrentUSD","bcurrentVSD"))
-  if(region=="EBS"){
-    covars<-c("bdepth","slope","aspectE","aspectN","curve","btemp","tmax","phi","BPI")
-    maxnet.covars<-c("bcurrentU","bcurrentV","bcurrentUSD","bcurrentVSD","bdepth",
-                     "slope","aspectE","aspectN","curve","btemp","tmax","phi","BPI")
-  }else{
-    covars<-c("bdepth","slope","aspectE","aspectN","curve","btemp","tmax","rocky","BPI")
-    maxnet.covars<-c("bcurrentU","bcurrentV","bcurrentUSD","bcurrentVSD","bdepth",
-                     "slope","aspectE","aspectN","curve","btemp","tmax","rocky","BPI")
+  covars2d <- list(c("lon","lat"),
+                   c("bcurrentU","bcurrentV"),
+                   c("bcurrentUSD","bcurrentVSD"))
+  
+  if (region == "EBS") {
+    
+    covars <- c("bdepth", "slope", "aspectE", "aspectN", "curve", "btemp", "tmax", "phi", "BPI")
+    maxnet.covars <- c("bcurrentU", "bcurrentV", "bcurrentUSD", "bcurrentVSD", "bdepth",
+                       "slope", "aspectE", "aspectN", "curve", "btemp", "tmax", "phi", "BPI")
+    
+  } else {
+    
+    covars <- c("bdepth", "slope", "aspectE", "aspectN", "curve", "btemp", "tmax", "rocky", "BPI")
+    maxnet.covars <- c("bcurrentU", "bcurrentV", "bcurrentUSD", "bcurrentVSD", "bdepth",
+                       "slope", "aspectE", "aspectN", "curve", "btemp", "tmax", "rocky", "BPI")
+    
   }
-  cofactors<-c("sponge","coral","pen")
-  maxnet2d<-list(c("bcurrentU","bcurrentV"),c("bcurrentUSD","bcurrentVSD"))
   
-  # this looks cumbersome, but automates the gam formulas
-  basic.gam.table<-data.frame(type=c(rep("smooth",length(covars2d)+length(covars)),rep("factor",length(cofactors)),"offset"),
-                              dims=c(rep(2,length(covars2d)),rep(1,length(covars)+length(cofactors)+1)),
-                              term=c(unlist(lapply(covars2d,FUN=function(x){return(x[1])})),covars,cofactors,"logarea"),
-                              term2=c(unlist(lapply(covars2d,FUN=function(x){return(x[2])})),rep(NA,length(covars)+length(cofactors)+1)),
-                              bs=c(rep("ds",length(covars2d)),rep("tp",length(covars)),rep(NA,length(cofactors)+1)),
-                              k=c(rep(10,length(covars2d)),rep(4,length(covars)),rep(NA,length(cofactors)+1)),
-                              m=c(rep(1,length(covars2d)+length(covars)),rep(NA,length(cofactors)+1)),
-                              m2=c(rep(.5,length(covars2d)),rep(NA,length(covars)+length(cofactors)+1)))
+  cofactors <- c("sponge", "coral", "pen")
   
-  alt.gam.table<-basic.gam.table
-  alt.gam.table$bs[alt.gam.table$bs=="tp"]<-"cr"
+  maxnet2d <- list(c("bcurrentU", "bcurrentV"), 
+                   c("bcurrentUSD", "bcurrentVSD"))
   
+  # this looks cumbersome, but automates the GAM formulas
+  basic.gam.table <- data.frame(
+    type = c(rep("smooth", length(covars2d) + length(covars)), rep("factor", length(cofactors)), "offset"),
+    dims = c(rep(2, length(covars2d)), rep(1, length(covars) + length(cofactors) + 1)),
+    term = c(unlist(lapply(covars2d, FUN = function(x) { return(x[1]) })), covars, cofactors, "logarea"),
+    term2 = c(unlist(lapply(covars2d, FUN = function(x) { return(x[2]) })), rep(NA, length(covars) + length(cofactors) + 1)),
+    bs = c(rep("ds", length(covars2d)), rep("tp", length(covars)), rep(NA, length(cofactors) + 1)),
+    k = c(rep(10, length(covars2d)), rep(4, length(covars)), rep(NA, length(cofactors) + 1)),
+    m = c(rep(1, length(covars2d) + length(covars)), rep(NA, length(cofactors) + 1)),
+    m2 = c(rep(0.5, length(covars2d)), rep(NA, length(covars) + length(cofactors) + 1))
+  )
+  
+  alt.gam.table <- basic.gam.table
+  alt.gam.table$bs[alt.gam.table$bs == "tp"] <- "cr"
   
   #####################################################
   # Now look at each species
   
-  region.plan<-subset(masterplan,Region==region)
-  region.species<-list.files(paste0("Y:/RACE_EFH_variables/Trawl_Models2/",region))
+  region.plan <- subset(masterplan, Region == region)
   
-  valid.species<-region.species[region.species%in%region.plan$File_name2]
-  valid.species<-valid.species[valid.species%in%c("adult_rougheyerockfish","subadult_rougheyerockfish",
-                                                  "adult_blackspottedrockfish","subadult_blackspottedrockfish")==F]
+  # region.species <- list.files(paste0("Y:/RACE_EFH_variables/Trawl_Models2/", region))
+  # 
+  # valid.species <- region.species[region.species %in% region.plan$File_name2]
+  # 
+  # valid.species <- valid.species[!valid.species %in% c("adult_rougheyerockfish", 
+  #                                                      "subadult_rougheyerockfish",
+  #                                                      "adult_blackspottedrockfish",
+  #                                                      "subadult_blackspottedrockfish")]
+  
+  valid.species <- c("adult_rougheyerockfish", 
+                     "subadult_rougheyerockfish",
+                     "adult_blackspottedrockfish",
+                     "subadult_blackspottedrockfish")
   
   for(s in 1:length(valid.species)){
     
-    sp.match<-which(region.plan$File_name2==valid.species[s])
+    s = 1
     
-    spec<-region.plan$Species[sp.match]
-    lstage<-region.plan$Lifestage[sp.match]
-    styear<-region.plan$Start_Year[sp.match]
-    abbr<-region.plan$Abbreviation[sp.match]
-    spec.path<-paste0(EFH.path,"/Trawl_Models2/",region,"/",valid.species[s])
+    sp.match <- which(region.plan$File_name2 == valid.species[s])
     
-    intable<-any(out.table$Region==region & out.table$Lifestage==lstage & out.table$Species==spec)
+    spec <- region.plan$Species[sp.match]
+    lstage <- region.plan$Lifestage[sp.match]
+    styear <- region.plan$Start_Year[sp.match]
+    abbr <- region.plan$Abbreviation[sp.match]
     
-    if(intable==F){
-      spec.errors<-read.csv(paste0(spec.path,"/cv_error_data.csv"))
-      e.table<-XML::htmlParse(paste0("file:///Y:/RACE_EFH_variables/Trawl_Models2/",region,"/",valid.species[s],"/ensemble_table.html"))
-      e.table2<-XML::readHTMLTable(e.table,as.data.frame = F)[[1]]
-      ensemble.table<-as.data.frame(e.table2,stringsAsFactors = F)
-      names(ensemble.table)<-names(e.table2)
+    spec.path <- paste0(EFH.path, "/Trawl_Models2/", region, "/", valid.species[s])
+    
+    intable <- any(out.table$Region == region & out.table$Lifestage == lstage & out.table$Species == spec)
+    
+    if(intable == F){
       
-      ensemble.errors<-subset(spec.errors,Model=="ensemble")
-      already.done<-unique(spec.errors$Model)
+      # spec.errors <- read.csv(paste0(spec.path,"/cv_error_data.csv"))
+      # e.table <- XML::htmlParse(paste0("file:///Y:/RACE_EFH_variables/Trawl_Models2/",region,"/",valid.species[s],"/ensemble_table.html"))
+      # e.table2 <- XML::readHTMLTable(e.table,as.data.frame = F)[[1]]
+      # ensemble.table <- as.data.frame(e.table2,stringsAsFactors = F)
+      # names(ensemble.table) <- names(e.table2)
       
-      species.data<-subset(region.data,year>=styear)
+      ensemble.errors <- subset(spec.errors,Model == "ensemble")
+      already.done <- unique(spec.errors$Model)
       
-      haul.match<-match(species.data$hauljoin,ensemble.errors$hauljoin)
-      species.data$Folds<-ensemble.errors$Folds[haul.match]
+      species.data <- subset(region.data, year >= styear)
       
-      n.pres<-sum(species.data[,abbr]>0)
+      # haul.match <- match(species.data$hauljoin,ensemble.errors$hauljoin)
+      # species.data$Folds <- ensemble.errors$Folds[haul.match]
       
-      basic.gam.formula<-AssembleGAMFormula(yvar = abbr, gam.table = basic.gam.table)
-      alt.gam.formula<-AssembleGAMFormula(yvar = abbr, gam.table = alt.gam.table)
-      basic.hgam.formula<-AssembleGAMFormula(yvar = abbr, gam.table = basic.gam.table,hgam=T)
-      alt.hgam.formula<-AssembleGAMFormula(yvar = abbr, gam.table = alt.gam.table,hgam=T)
+      n.pres <- sum(species.data[,abbr]>0)
+      
+      basic.gam.formula <- AssembleGAMFormula(yvar = abbr, gam.table = basic.gam.table)
+      alt.gam.formula <- AssembleGAMFormula(yvar = abbr, gam.table = alt.gam.table)
+      basic.hgam.formula <- AssembleGAMFormula(yvar = abbr, gam.table = basic.gam.table, hgam = T)
+      alt.hgam.formula <- AssembleGAMFormula(yvar = abbr, gam.table = alt.gam.table, hgam = T)
       
       #############################################
       # Maxnet
+      
       print(paste("Running MaxEnt model for",region,lstage,spec))
+      
       if(any(already.done=="maxnet")){
+        
         maxnet.model<-readRDS(paste0(spec.path,"/maxnet_model.rds"))
         maxnet.abund<-raster::raster(paste0(spec.path,"/maxnet_abundance"))
         maxnet.errors<-subset(spec.errors,Model=="maxnet")
         maxnet.scale<-ensemble.table$`Scale Factor`[ensemble.table$Model=="maxnet"]
         maxnet.converge<-T
+        
       }else{
-        maxnet.converge0<-rep(F,6)
-        maxnet.abund.check0<-rep(F,6)
-        maxnet.model.list<-list()
-        maxnet.abund.list<-list()
-        maxnet.cv.model.list<-list()
-        maxnet.error.list<-list()
-        maxnet.scale.vec<-rep(NA,6)
-        maxnet.rmse0<-rep(NA,6)
+        
+        # Initialize variables for maxnet modeling
+        maxnet_converge <- rep(FALSE, 6)
+        maxnet_abund_check <- rep(FALSE, 6)
+        maxnet_model_list <- list()
+        maxnet_abund_list <- list()
+        maxnet_cv_model_list <- list()
+        maxnet_error_list <- list()
+        maxnet_scale_vec <- rep(NA, 6)
+        maxnet_rmse <- rep(NA, 6)
         
         # loop through and check different multiplication constants
         for(r in 1:6){
-          r.mult<-c(.5,1,1.5,2,2.5,3)[r]
+          
+          r = 1
+          
+          r.mult <- c(.5,1,1.5,2,2.5,3)[r]
           
           # check out a prospective maxnet model
-          try(maxnet.model0<-FitMaxnet(data = species.data,species = abbr,vars = maxnet.covars,facs=cofactors,
-                                       regmult = r.mult,reduce = T))
+          try(maxnet.model0 <- FitMaxnet(data = species.data,
+                                         species = abbr,
+                                         vars = maxnet.covars,
+                                         facs = cofactors,
+                                         regmult = r.mult,
+                                         reduce = T))
+          
           if(exists("maxnet.model0")){
-            maxnet.converge0[r]<-T
             
-            maxnet.scale.vec[r]<-mean(species.data[,abbr])/
-              mean(exp(stats::predict(maxnet.model0,newdata=species.data,type="link")+maxnet.model0$ent))
-            maxnet.abund.list[[r]]<-MakeMaxEntAbundance(model = maxnet.model0,maxent.stack = raster.stack,
-                                                        scale.fac = maxnet.scale.vec[r],type = "cloglog",
-                                                        land = ak.raster,filename = "")
+            # maxnet.converge0[r] <- T
             
-            maxnet.abund.check0[r]<-raster::cellStats(maxnet.abund.list[[r]],max)<(max(species.data[,abbr])*10)
+            maxnet.scale.vec[r] <- mean(species.data[,abbr])/
+              mean(exp(stats::predict(maxnet.model0, 
+                                      newdata = species.data,
+                                      type = "link") + maxnet.model0$ent))
+            
+            maxnet.abund.list[[r]] <- MakeMaxEntAbundance(model = maxnet.model0,
+                                                          maxent.stack = raster.stack,
+                                                          scale.fac = maxnet.scale.vec[r],
+                                                          type = "cloglog",
+                                                          land = ak.raster,
+                                                          filename = "")
+            
+            maxnet.abund.check0[r] <- raster::cellStats(maxnet.abund.list[[r]], max) < (max(species.data[,abbr]) * 10)
+            
           }
           
           # if it converges, do the checks and crossvalidation
           if(maxnet.converge0[r]){
+            
             maxnet.model.list[[r]]<-maxnet.model0
             
-            maxnet.cv<-CrossValidateModel(model = maxnet.model0,data = species.data,species = abbr,group = "Folds",
-                                          model.type = "maxnet",key="hauljoin",scale.preds = T,regmult = r.mult)
-            maxnet.error.list[[r]]<-maxnet.cv[[1]]
+            maxnet.cv <- CrossValidateModel(model = maxnet.model0,
+                                            data = species.data,species = abbr,
+                                            group = "Folds",
+                                            model.type = "maxnet",
+                                            key="hauljoin",
+                                            scale.preds = T,
+                                            regmult = r.mult)
             
-            maxnet.rmse0[r]<-max(c(RMSE(pred = maxnet.error.list[[r]]$pred,obs = maxnet.error.list[[r]]$abund),
-                                   RMSE(pred = maxnet.error.list[[r]]$cvpred,obs = maxnet.error.list[[r]]$abund)))
+            maxnet.error.list[[r]] <- maxnet.cv[[1]]
+            
+            maxnet.rmse0[r] <- max(c(RMSE(pred = maxnet.error.list[[r]]$pred,obs = maxnet.error.list[[r]]$abund),
+                                     RMSE(pred = maxnet.error.list[[r]]$cvpred,obs = maxnet.error.list[[r]]$abund)))
             
             # will also discard a model any of the cv folds fails, as it becomes impossible to calculate RMSE
             if(any(is.na(maxnet.cv[[1]]$cvpred))){
+              
               maxnet.model.list[[r]]<-NA
               maxnet.cv.model.list[[r]]<-NA
               maxnet.error.list[[r]]<-NA
               maxnet.rmse0[r]<-NA
+              
             }
+            
           }else{
+            
             maxnet.model.list[[r]]<-NA
             maxnet.cv.model.list[[r]]<-NA
             maxnet.error.list[[r]]<-NA
             maxnet.rmse0[r]<-NA
           }
+          
           rm(maxnet.model0)
         }
+        
         if(any(maxnet.abund.check0)){
+          
           passed.abund<-which(maxnet.abund.check0)
           which.best<-passed.abund[which.min(maxnet.rmse0[passed.abund])]
+          
         }else{
+          
           which.best<-which.min(maxnet.rmse0)
+          
         }
-        maxnet.model<-maxnet.model.list[[which.best]]
-        maxnet.abund<-maxnet.abund.list[[which.best]]
-        maxnet.errors<-maxnet.error.list[[which.best]]
-        maxnet.scale<-maxnet.scale.vec[which.best]
-        maxnet.converge<-T
+        
+        maxnet.model <- maxnet.model.list[[which.best]]
+        maxnet.abund <- maxnet.abund.list[[which.best]]
+        maxnet.errors <- maxnet.error.list[[which.best]]
+        maxnet.scale <- maxnet.scale.vec[which.best]
+        maxnet.converge <- T
         
         saveRDS(maxnet.model,file=paste0(spec.path,"/maxnet_model.rds"))
       }
+      
       if(maxnet.converge){
-        prob.raster<-MakeMaxEntAbundance(model = maxnet.model,maxent.stack = raster.stack,
-                                         land = ak.raster,type = "maxnet")
         
-        auc.dat<-data.frame(1:nrow(maxnet.errors),maxnet.errors$abund,maxnet.errors$prob,maxnet.errors$cvprob)
+        # Generate probability raster using the MaxEnt model
+        prob.raster <- MakeMaxEntAbundance(model = maxnet.model,
+                                           maxent.stack = raster.stack,
+                                           land = ak.raster,
+                                           type = "maxnet")
         
-        cbreak<-FindEFHbreaks(abund.raster = maxnet.abund,method = "cumulative",quantiles = .05)[2]
+        # Create a data frame for AUC calculation
+        auc.dat <- data.frame(Index = 1:nrow(maxnet.errors),
+                              Abundance = maxnet.errors$abund,
+                              Probability = maxnet.errors$prob,
+                              CV_Probability = maxnet.errors$cvprob)
         
-        out.dat<-data.frame(Region=region,Species=spec,Lifestage=lstage,Model="maxnet",N=n.pres,
-                            Weight=ensemble.table$weight[ensemble.table$Model=="maxnet"],
-                            Scale=maxnet.scale,
-                            RMSE=RMSE(pred = maxnet.errors$pred,obs = maxnet.errors$abund),
-                            cvRMSE=RMSE(pred = maxnet.errors$cvpred,obs = maxnet.errors$abund),
-                            Rho=cor(round(maxnet.errors$pred,2),maxnet.errors$abund,method="spearman"),
-                            cvRho=cor(round(maxnet.errors$cvpred,2),maxnet.errors$abund,method="spearman"),
-                            AUC=PresenceAbsence::auc(auc.dat,which.model = 1)[1,1],
-                            cvAUC=PresenceAbsence::auc(auc.dat,which.model = 2)[1,1],
-                            PDE=PDE(pred = maxnet.errors$pred,obs = maxnet.errors$abund),
-                            cvPDE=PDE(pred = maxnet.errors$cvpred,obs = maxnet.errors$abund),
-                            Prob_Area=round(sum(getValues(prob.raster)>=.05,na.rm=T),-2),
-                            Abund_Area=round(sum(getValues(maxnet.abund)>=.0513,na.rm=T),-2),
-                            C_Area=round(sum(getValues(maxnet.abund)>=cbreak,na.rm=T),-2))
+        # Find the breakpoint for EFH using cumulative method
+        cbreak <- FindEFHbreaks(abund.raster = maxnet.abund,
+                                method = "cumulative",
+                                quantiles = 0.05)[2]
+        
+        # Create a data frame for output data
+        out.dat <- data.frame(Region = region,
+                              Species = spec,
+                              Lifestage = lstage,
+                              Model = "maxnet",
+                              N = n.pres,
+                              Weight = ensemble.table$weight[ensemble.table$Model == "maxnet"],
+                              Scale = maxnet.scale,
+                              RMSE = RMSE(pred = maxnet.errors$pred, obs = maxnet.errors$abund),
+                              cvRMSE = RMSE(pred = maxnet.errors$cvpred, obs = maxnet.errors$abund),
+                              Rho = cor(round(maxnet.errors$pred, 2), maxnet.errors$abund, method = "spearman"),
+                              cvRho = cor(round(maxnet.errors$cvpred, 2), maxnet.errors$abund, method = "spearman"),
+                              AUC = PresenceAbsence::auc(auc.dat, which.model = 1)[1, 1],
+                              cvAUC = PresenceAbsence::auc(auc.dat, which.model = 2)[1, 1],
+                              PDE = PDE(pred = maxnet.errors$pred, obs = maxnet.errors$abund),
+                              cvPDE = PDE(pred = maxnet.errors$cvpred, obs = maxnet.errors$abund),
+                              Prob_Area = round(sum(getValues(prob.raster) >= 0.05, na.rm = TRUE), -2),
+                              Abund_Area = round(sum(getValues(maxnet.abund) >= 0.0513, na.rm = TRUE), -2),
+                              C_Area = round(sum(getValues(maxnet.abund) >= cbreak, na.rm = TRUE), -2))
+        
       }else{
+        
         out.dat<-data.frame(Region=region,Species=spec,Lifestage=lstage,Model="maxnet",N=n.pres,
                             Weight=ensemble.table$weight[ensemble.table$Model=="maxnet"],
                             Scale=NA,RMSE=NA,cvRMSE=NA,Rho=NA,cvRho=NA,AUC=NA,cvAUC=NA,
                             PDE=NA,cvPDE=NA,Prob_Area=NA,Abund_Area=NA,C_Area=NA)
+        
       }
-      out.table<-rbind(out.table,out.dat)
+      
+      out.table <- rbind(out.table, out.dat)
       
       ##########################################################################################
       # Cloglog
+      
       print(paste("Running Cloglog model for",region,lstage,spec))
+      
       if(any(already.done=="cloglog")){
+        
         cloglog.model<-readRDS(paste0(spec.path,"/cloglog_model.rds"))
         cloglog.abund<-raster::raster(paste0(spec.path,"/cloglog_abundance"))
         cloglog.errors<-subset(spec.errors,Model=="cloglog")
         cloglog.scale<-ensemble.table$`Scale Factor`[ensemble.table$Model=="cloglog"]
         cloglog.converge<-T
-      }else{
-        try(cloglog.model<-FitGAM(gam.formula = basic.gam.formula,data = species.data,
-                                  family.gam = "binomial",link.fx = "cloglog",reduce = T,select = T,
-                                  verbose=F))
         
-        cloglog.converge<-exists("cloglog.model") & any(is.infinite(predict(cloglog.model,type="response")))==F &
-          any(is.na(predict(cloglog.model,type="response")))==F
+      }else{
+        
+        try(cloglog.model <- FitGAM(gam.formula = basic.gam.formula,
+                                    data = species.data,
+                                    family.gam = "binomial",
+                                    link.fx = "cloglog",
+                                    reduce = T,
+                                    select = T,
+                                    verbose = F))
+        
+        cloglog.converge <- exists("cloglog.model") & 
+          any(is.infinite(predict(cloglog.model,type = "response"))) == F &
+          any(is.na(predict(cloglog.model,type="response"))) == F
+        
         if(cloglog.converge){
-          cloglog.scale<-mean(species.data[,abbr])/mean(exp(predict(cloglog.model,type="link")))
-          cloglog.abund<-MakeGAMAbundance(model = cloglog.model,r.stack = raster.stack,scale.factor = cloglog.scale,
-                                          land = ak.raster,filename = "")
           
-          cloglog.cv<-CrossValidateModel(model = cloglog.model,model.type = "cloglog",data = species.data,scale.preds = T,
+          cloglog.scale <- mean(species.data[,abbr])/mean(exp(predict(cloglog.model, type = "link")))
+          
+          cloglog.abund <- MakeGAMAbundance(model = cloglog.model,
+                                            r.stack = raster.stack,
+                                            scale.factor = cloglog.scale,
+                                            # land = ak.raster,
+                                            filename = "")
+          
+          cloglog.cv<-CrossValidateModel(model = cloglog.model,model.type = "cloglog",
+                                         data = species.data,scale.preds = T,
                                          species = abbr,group = "Folds",key="hauljoin")
-          cloglog.errors<-cloglog.cv[[1]]
           
-          saveRDS(cloglog.model,file=paste0(spec.path,"/cloglog_model.rds"))
+          cloglog.errors <- cloglog.cv[[1]]
+          
+          saveRDS(cloglog.model, file = paste0(spec.path, "/cloglog_model.rds"))
+          
         }
       }
       if(cloglog.converge){
@@ -467,20 +640,27 @@ for(r in 1:3){
       #####################################################################
       # Negative Binomial
       print(paste("Running Negative Binomial model for",region,lstage,spec))
+      
       if(any(already.done=="negbin")){
+        
         negbin.model<-readRDS(paste0(spec.path,"/negbin_model.rds"))
         negbin.abund<-raster::raster(paste0(spec.path,"/negbin_abundance"))
         negbin.errors<-subset(spec.errors,Model=="negbin")
         negbin.scale<-ensemble.table$`Scale Factor`[ensemble.table$Model=="negbin"]
         negbin.converge<-T
+        
       }else{
-        try(negbin.model<-FitGAM(gam.formula = basic.gam.formula,data = species.data,verbose = F,
+        
+        try(negbin.model<-FitGAM(gam.formula = basic.gam.formula,
+                                 data = species.data,verbose = F,
                                  reduce = T,select = T,family.gam = "nb"))
         
-        negbin.converge<-exists("negbin.model") & any(is.infinite(predict(negbin.model,type="response")))==F &
-          any(is.na(predict(negbin.model,type="response")))==F
+        negbin.converge <- exists("negbin.model") & 
+          any(is.infinite(predict(negbin.model,type="response"))) == F &
+          any(is.na(predict(negbin.model,type="response"))) == F
         
         if(negbin.converge){
+          
           negbin.scale<-mean(species.data[,abbr])/mean(predict(negbin.model,type="response"))
           negbin.abund<-MakeGAMAbundance(model = negbin.model,r.stack = raster.stack,scale.factor = negbin.scale,
                                          land = ak.raster,filename = "")
@@ -524,28 +704,29 @@ for(r in 1:3){
       
       ##############################################################
       # Ensemble
-      ensemble.abund<-raster::raster(paste0(spec.path,"/ensemble_abundance"))
-      ensemble.prob.vals<-1-dpois(0,lambda = getValues(ensemble.abund))
       
-      auc.dat<-data.frame(1:nrow(ensemble.errors),ensemble.errors$abund,ensemble.errors$prob,ensemble.errors$cvprob)
+      ensemble.abund <- raster::raster(paste0(spec.path, "/ensemble_abundance"))
+      ensemble.prob.vals <- 1 - dpois(0, lambda = getValues(ensemble.abund))
       
-      cbreak<-FindEFHbreaks(abund.raster = ensemble.abund,method = "cumulative",quantiles = .05)[2]
+      auc.dat <- data.frame(1:nrow(ensemble.errors), ensemble.errors$abund, ensemble.errors$prob, ensemble.errors$cvprob)
       
-      out.dat<-data.frame(Region=region,Species=spec,Lifestage=lstage,Model="ensemble",N=n.pres,
-                          Weight=1,Scale=1,
-                          RMSE=RMSE(pred = ensemble.errors$pred,obs = ensemble.errors$abund),
-                          cvRMSE=RMSE(pred = ensemble.errors$cvpred,obs = ensemble.errors$abund),
-                          Rho=cor(round(ensemble.errors$pred,2),ensemble.errors$abund,method="spearman"),
-                          cvRho=cor(round(ensemble.errors$cvpred,2),ensemble.errors$abund,method="spearman"),
-                          AUC=PresenceAbsence::auc(auc.dat,which.model=1)[1,1],
-                          cvAUC=PresenceAbsence::auc(auc.dat,which.model=2)[1,1],
-                          PDE=PDE(pred = ensemble.errors$pred,obs = ensemble.errors$abund),
-                          cvPDE=PDE(pred = ensemble.errors$cvpred,obs = ensemble.errors$abund),
-                          Prob_Area=round(sum(ensemble.prob.vals>=.05,na.rm=T),-2),
-                          Abund_Area=round(sum(getValues(ensemble.abund)>=.0513,na.rm=T),-2),
-                          C_Area=round(sum(getValues(ensemble.abund)>=cbreak,na.rm=T),-2))
-      out.table<-rbind(out.table,out.dat)
-      write.csv(out.table,file = paste0(EFH.path,"/Trawl_Models2/Metrics_all_models.csv"),row.names = F)
+      cbreak <- FindEFHbreaks(abund.raster = ensemble.abund, method = "cumulative", quantiles = 0.05)[2]
+      
+      out.dat <- data.frame(Region = region, Species = spec, Lifestage = lstage, Model = "ensemble", N = n.pres,
+                            Weight = 1, Scale = 1,
+                            RMSE = RMSE(pred = ensemble.errors$pred, obs = ensemble.errors$abund),
+                            cvRMSE = RMSE(pred = ensemble.errors$cvpred, obs = ensemble.errors$abund),
+                            Rho = cor(round(ensemble.errors$pred, 2), ensemble.errors$abund, method = "spearman"),
+                            cvRho = cor(round(ensemble.errors$cvpred, 2), ensemble.errors$abund, method = "spearman"),
+                            AUC = PresenceAbsence::auc(auc.dat, which.model = 1)[1, 1],
+                            cvAUC = PresenceAbsence::auc(auc.dat, which.model = 2)[1, 1],
+                            PDE = PDE(pred = ensemble.errors$pred, obs = ensemble.errors$abund),
+                            cvPDE = PDE(pred = ensemble.errors$cvpred, obs = ensemble.errors$abund),
+                            Prob_Area = round(sum(ensemble.prob.vals >= 0.05, na.rm = T), -2),
+                            Abund_Area = round(sum(getValues(ensemble.abund) >= 0.0513, na.rm = T), -2),
+                            C_Area = round(sum(getValues(ensemble.abund) >= cbreak, na.rm = T), -2))
+      out.table <- rbind(out.table, out.dat)
+      write.csv(out.table, file = paste0(EFH.path, "/Trawl_Models2/Metrics_all_models.csv"), row.names = F)
       print(out.table[nrow(out.table),])
       
       # clear out previous run
