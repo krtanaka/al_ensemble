@@ -486,7 +486,8 @@ while(done == F){
       MakeAKGFDotplot(presence = species.data[species.data[, s] > 0, ],
                       absence = species.data[species.data[, s] == 0, ],
                       highdensity = species.data[species.data[, s] > hd, ],
-                      region = tolower(region), dataCRS = raster.stack@crs,
+                      region = tolower(region), 
+                      dataCRS = raster.stack@crs,
                       title.name = figure.name)
       
       grDevices::dev.off()
@@ -661,14 +662,16 @@ while(done == F){
       if(cloglog.converge){
         
         cloglog.converge <- T
+        
         cloglog.scale <- mean(species.data[,s])/mean(exp(predict(cloglog.model, type = "link")))
+        
         cloglog.abund <- MakeGAMAbundance(model = cloglog.model,
                                           r.stack = raster.stack,
                                           scale.factor = cloglog.scale,
                                           land = ak.raster,
                                           filename = "")
         
-        cloglog.abund.check<-raster::cellStats(cloglog.abund,max)<(max(species.data[,s])*10)
+        cloglog.abund.check <- raster::cellStats(cloglog.abund, max) < (max(species.data[,s]) * 10)
         
       }else{
         
@@ -678,7 +681,7 @@ while(done == F){
       
       if(cloglog.abund.check == F){
         
-        rm(cloglog.abund.check,cloglog.abund,cloglog.scale)
+        rm(cloglog.abund.check, cloglog.abund, cloglog.scale)
         
         print("TPS cloglog model failed abundance test; Trying alternate version")
         
@@ -795,7 +798,7 @@ while(done == F){
       
       if(hpoisson.abund.check == F){
         
-        rm(hpoisson.model,hpoisson.abund,hpoisson.scale)
+        rm(hpoisson.model, hpoisson.abund, hpoisson.scale)
         
         print("TPS hurdle model failed abundance test; Trying alternate version")
         
@@ -1248,17 +1251,21 @@ while(done == F){
           
           model.breaks[m] <- m.breaks[2]
           
-          efh.list[[m]] <- raster::cut(abund.list[[m]], breaks = m.breaks, overwrite = TRUE,
+          efh.list[[m]] <- raster::cut(abund.list[[m]], 
+                                       breaks = m.breaks, 
+                                       overwrite = TRUE,
                                        filename = paste0(species.path,"/",model.name,"_efh"))
           
           area.vec[m] <- sum(raster::getValues(efh.list[[m]])>1,na.rm=T)
           
           names(area.vec)[m] <- model.name
           
-          var.list[[m]] <- MakeVarianceRasters(model.list = cv.model.list[[m]],raster.stack = raster.stack,
-                                               model.type = model.types[m],scale.factor = model.scales[m])
+          var.list[[m]] <- MakeVarianceRasters(model.list = cv.model.list[[m]],
+                                               raster.stack = raster.stack,
+                                               model.type = model.types[m],
+                                               scale.factor = model.scales[m])
           
-          raster::writeRaster(x = var.list[[m]], filename = paste0(species.path,"/",model.name,"_abund_variance"), overwrite = T)
+          raster::writeRaster(x = var.list[[m]], filename = paste0(species.path,"/", model.name,"_abund_variance"), overwrite = T)
           
           # quick plot of cv
           cv.raster <- sqrt(var.list[[m]])/(abund.list[[m]] + raster::cellStats(abund.list[[m]],max) * .01)
