@@ -8,7 +8,7 @@ library(raster)
 library(magrittr)
 library(maxnet)
 
-masterplan<-utils::read.csv("/Users/kisei.tanaka/Desktop/10211730/Masterplan.csv")
+masterplan<-utils::read.csv("Masterplan.csv")
 
 computer.name<-"JHLaptop"
 
@@ -26,6 +26,7 @@ make.ensemble <- TRUE      # Make ensemble flag
 group.var   <- "Folds"     # Do you want to group by spatial zone or random fold
 
 EFH.path <- "/Users/kisei.tanaka/Desktop/10211730"
+EFH.path <- getwd()
 
 # set of nicer names to be used in figure labels
 # Use name for most figures, but use name2 for deviance tables
@@ -739,7 +740,7 @@ while(done == F){
         
         raster::writeRaster(cloglog.abund, paste0(species.path, "/cloglog_abundance"), overwrite = T)
         
-        source("/Users/kisei.tanaka/Desktop/10211730/GetGAMEffects.R")
+        source("GetGAMEffects.R")
         cloglog.effects <- GetGAMEffects(model = cloglog.model, 
                                          data = species.data, 
                                          vars = "all", 
@@ -1319,7 +1320,7 @@ while(done == F){
           grDevices::dev.off()
           
           # Effects plot
-          source("C:/Users/kisei.tanaka/Desktop/10211730/Effectsplot.R")
+          source("Effectsplot.R")
           
           tryCatch({
             
@@ -1546,7 +1547,7 @@ while(done == F){
       grDevices::dev.off()
       
       # Ensemble deviance table
-      source("C:/Users/kisei.tanaka/Desktop/10211730/MakeDevianceTable.R")
+      source("MakeDevianceTable.R")
       MakeDevianceTable(model.names = model.vec,
                         model.types = model.types,
                         dev.list = dev.list,
@@ -1579,7 +1580,7 @@ while(done == F){
       
       utils::write.csv(x = error.table,file = paste0(species.path,"/cv_error_data.csv"),row.names = F)
       
-      source("/Users/kisei.tanaka/Desktop/10211730/MakeEnsembleXtable.R")
+      source("MakeEnsembleXtable.R")
       MakeEnsembleXtable(weights = model.weights,
                          preds.table = error.table,
                          converge.vec = model.converge.vec,
