@@ -25,7 +25,6 @@ rerun       <- TRUE        # Rerun flag
 make.ensemble <- TRUE      # Make ensemble flag
 group.var   <- "Folds"     # Do you want to group by spatial zone or random fold
 
-EFH.path <- "/Users/kisei.tanaka/Desktop/10211730"
 EFH.path <- getwd()
 
 # set of nicer names to be used in figure labels
