@@ -196,14 +196,13 @@ while(done == F){
       
       region <- region0
       
-      # (network location is \\akc0ss-n086/SEA_Programs/RACE_EFH_variables)
       bathy <- raster::raster(paste0(EFH.path, "/Variables/Variables_", region, "_1km/Bathy"))
       slope <- raster::raster(paste0(EFH.path, "/Variables/Variables_", region, "_1km/Slope"))
       tmax <- raster::raster(paste0(EFH.path, "/Variables/Variables_", region, "_1km/Tmax"))
       btemp <- raster::raster(paste0(EFH.path, "/Variables/Variables_", region, "_1km/Btemp"))
-      btemp <- raster::crop(x = btemp, y=bathy)
+      btemp <- raster::crop(x = btemp, y = bathy)
       BPI <- raster::raster(paste0(EFH.path, "/Variables/Variables_", region, "_1km/BPI"))
-      BPI <- raster::crop(x = BPI, y=bathy)
+      BPI <- raster::crop(x = BPI, y = bathy)
       # Curve <- raster::raster(paste0(EFH.path, "/Variables/Variables_", region, "_1km/Curve_Mean"))
       # AspectE <- raster::raster(paste0(EFH.path, "/Variables/Variables_", region, "_1km/Aspect_East"))
       # AspectN <- raster::raster(paste0(EFH.path, "/Variables/Variables_", region, "_1km/Aspect_North"))
@@ -224,7 +223,7 @@ while(done == F){
       
       if(region == "EBS"){
         
-        phi <- raster::raster(paste0(EFH.path,"/Variables/Variables_EBS_1km/phi"))
+        phi <- raster::raster(paste0(EFH.path, "/Variables/Variables_EBS_1km/phi"))
         
         raster.stack <- raster::stack(
           lon,
@@ -272,7 +271,7 @@ while(done == F){
       # GOA and AI don't have sediment grabs to calculate phi, so there is a "rockiness" variable instead
       if(region %in% c("AI","GOA")){
         
-        rocky <- raster::raster(paste0(EFH.path,"/Variables/Variables_",region,"_1km/rocky"))
+        rocky <- raster::raster(paste0(EFH.path, "/Variables/Variables_", region, "_1km/rocky"))
         
         raster.stack <- raster::stack(
           lon,
