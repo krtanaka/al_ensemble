@@ -8,11 +8,11 @@ library(raster)
 library(magrittr)
 library(maxnet)
 
-masterplan<-utils::read.csv("Masterplan.csv")
+masterplan <- utils::read.csv("Masterplan.csv")
 
-computer.name<-"JHLaptop"
+computer.name <- "JHLaptop"
 
-region<-F
+region <- F
 
 # Use this to specify a particular species or subset of species and some other control parameters
 # Set species.vec and region.vec to NA in order to run everything
