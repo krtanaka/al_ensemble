@@ -312,7 +312,7 @@
 "GOA",232,TRUE,"salmon_shark","all","salmon shark","goa_all_salmonshark","all_salmonshark","salshark",0,0,9999,"2/20/2022 14:22","JeremyVM2",19,FALSE,FALSE,FALSE,FALSE,FALSE,"2/20/2022 14:30"
 "GOA",310,TRUE,"spiny_dogfish","subadult","subadult spiny dogfish","goa_subadult_spinydogfish","subadult_spinydogfish","j_dogfish",0,10,973,"2/20/2022 14:30","JeremyVM2",1262,TRUE,TRUE,TRUE,TRUE,TRUE,"2/21/2022 4:56"
 "GOA",310,TRUE,"spiny_dogfish","adult","adult spiny dogfish","goa_adult_spinydogfish","adult_spinydogfish","a_dogfish",0,974,9999,"2/20/2022 20:24","NedVM2",127,TRUE,TRUE,TRUE,TRUE,TRUE,"2/21/2022 5:30"
-"GOA",311,TRUE,"spiny_dogfish","all","spiny dogfish","goa_all_spinydogfish","all_spinydogfish","dogfish",0,0,9999,"2024-04-16 12:51:55.710518","JHLaptop",NA,NA,NA,NA,NA,NA,NA
+"GOA",311,TRUE,"spiny_dogfish","all","spiny dogfish","goa_all_spinydogfish","all_spinydogfish","dogfish",0,0,9999,"2024-04-16 16:22:52.033188","JHLaptop",NA,NA,NA,NA,NA,NA,NA
 "GOA",320,FALSE,"Pacific_sleeper_shark","all","Pacific sleeper shark","goa_all_pacificsleepershark","all_pacificsleepershark","sleeper",0,0,9999,"5/5/2021 6:49","VM4",142,FALSE,TRUE,TRUE,TRUE,TRUE,"5/5/2021 16:04"
 "GOA",420,TRUE,"big_skate","subadult","subadult big skate","goa_subadult_bigskate","subadult_bigskate","j_big_sk",0,10,1486,"2/21/2022 4:31","JeremyVM1",594,TRUE,TRUE,TRUE,TRUE,TRUE,"2/21/2022 15:24"
 "GOA",420,TRUE,"big_skate","adult","adult big skate","goa_adult_bigskate","adult_bigskate","a_big_sk",0,1487,9999,"2/21/2022 4:56","JeremyVM2",195,TRUE,TRUE,TRUE,TRUE,TRUE,"2/21/2022 13:12"
