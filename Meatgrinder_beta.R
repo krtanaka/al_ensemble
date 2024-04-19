@@ -378,7 +378,7 @@ while(done == F){
       )
   }
   
-  # cofactors <- c("sponge","coral","pen")[1:2]
+  cofactors <- c("sponge","coral","pen")[1:2]
   
   # maxnet2d <- list(c("bcurrentU","bcurrentV"),
   #                  c("bcurrentUSD","bcurrentVSD"))
