@@ -36,7 +36,10 @@ nice.names <- data.frame(
   var = c(
     "lon",
     "lat",
-    "depth"
+    "depth",
+    'chla',
+    "sst",
+    "coastal_mod"
     # "slope",
     # # "aspectE",
     # # "aspectN",
@@ -66,7 +69,10 @@ nice.names <- data.frame(
   name = c(
     "Longitude",
     "Latitude",
-    "Depth (m)"
+    "Depth (m)",
+    "Chlorophyll a",
+    "SST",
+    "Coastal modification"
     # "Slope (degrees)",
     # # "Slope Eastness",
     # # "Slope Northness",
@@ -96,7 +102,10 @@ nice.names <- data.frame(
   name2 = c(
     "longitude",
     "latitude",
-    "depth"
+    "depth",
+    "chla",
+    "sst",
+    "coastal_mod"
     # "slope",
     # # "aspect east",
     # # "aspect north",
@@ -200,6 +209,20 @@ while(done == F){
   cat(paste0("Starting species: ", figure.name,"; Number 1 of ", length(unique(ncrmp$SPECIES))), "\n")
   
   bathy <- raster::raster(paste0(EFH.path, "/Variables/bathy.nc"))
+  chla = raster::raster(paste0(EFH.path, "/Variables/chla.nc"))
+  sst = raster::raster(paste0(EFH.path, "/Variables/sst.nc"))
+  coastal_mod = raster::raster(paste0(EFH.path, "/Variables/coastal_mod.tif"))
+  
+  adjustLongitude <- function(x) {
+    ifelse(x < 0, x + 360, x)
+  }
+  
+  coastal_mod <- calc(coastal_mod, adjustLongitude)
+  e <- extent(coastal_mod)
+  extent(coastal_mod) <- extent(ifelse(e@xmin < 0, e@xmin + 360, e@xmin), 
+                                ifelse(e@xmax < 0, e@xmax + 360, e@xmax),
+                                e@ymin, e@ymax)
+  
   # slope <- raster::raster(paste0(EFH.path, "/Variables/Variables_", region, "_1km/Slope"))
   # tmax <- raster::raster(paste0(EFH.path, "/Variables/Variables_", region, "_1km/Tmax"))
   # btemp <- raster::raster(paste0(EFH.path, "/Variables/Variables_", region, "_1km/Btemp"))
@@ -218,10 +241,22 @@ while(done == F){
   lon <- raster::init(bathy, v ='x')
   lon <- raster::mask(lon, bathy, overwrite = F)
   
+  chla = resample(chla, bathy, method = "bilinear")
+  chla <- raster::mask(chla, bathy, overwrite = F)
+  
+  sst = resample(sst, bathy, method = "bilinear")
+  sst <- raster::mask(sst, bathy, overwrite = F)
+
+  coastal_mod = resample(coastal_mod, bathy, method = "ngb")
+  coastal_mod <- raster::mask(coastal_mod, bathy, overwrite = F)
+  
   raster.stack <- raster::stack(
     lon,
     lat,
-    bathy
+    bathy,
+    chla, 
+    sst, 
+    coastal_mod
     # slope,
     # AspectE,
     # AspectN,
@@ -242,7 +277,10 @@ while(done == F){
   names(raster.stack) <- c(
     "lon",
     "lat",
-    "depth"
+    "depth",
+    "chla",
+    "sst",
+    "coastal_mod"
     # "slope",
     # # "aspectE",
     # # "aspectN",
@@ -259,7 +297,6 @@ while(done == F){
     # "coral"
     # # "pen"
   )
-  
   
   png.width <- 8
   png.height <- 3.5
@@ -350,7 +387,9 @@ while(done == F){
     # c("bcurrentUSD","bcurrentVSD"))
     
     covars <- c(
-      "depth"
+      "depth",
+      "chla",
+      "sst"
       # # "slope",
       # # "aspectE",
       # # "aspectN",
@@ -366,7 +405,9 @@ while(done == F){
       # "bcurrentV",
       # "bcurrentUSD",
       # "bcurrentVSD",
-      "depth"
+      "depth",
+      "chla",
+      "sst"
       # "slope",
       # # "aspectE",
       # # "aspectN",
@@ -379,6 +420,7 @@ while(done == F){
   }
   
   cofactors <- c("sponge","coral","pen")[1:2]
+  cofactors <- "coastal_mod"
   
   # maxnet2d <- list(c("bcurrentU","bcurrentV"),
   #                  c("bcurrentUSD","bcurrentVSD"))
@@ -393,8 +435,8 @@ while(done == F){
   hd <- quantile(species.data[species.data[, s] > 0, s], probs = 0.9)
   
   # Generate dot plot
-  grDevices::png(paste0(species.path, "/dotplot.png"),
-                 width = png.width, height = png.height, res = 300, units = "in")
+  # grDevices::png(paste0(species.path, "/dotplot.png"),
+                 # width = png.width, height = png.height, res = 300, units = "in")
   # 
   # MakeAKGFDotplot(presence = species.data[species.data[, s] > 0, ],
   #                 absence = species.data[species.data[, s] == 0, ],
@@ -409,12 +451,12 @@ while(done == F){
   print(p %>% 
           ggplot(aes(lon, lat)) + 
           geom_point(aes(size = p, fill = p), shape = 21, alpha = 0.5)  + 
-          scale_fill_gradientn(colours = matlab.like(100)) +
+          # scale_fill_gradientn(colours = matlab.like(100)) +
           coord_map() + 
           guides(fill = guide_legend(""),
                  size = guide_legend("")))
   
-  grDevices::dev.off()
+  # grDevices::dev.off()
 
   
   # this looks cumbersome, but automates the gam formulas
