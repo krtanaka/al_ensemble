@@ -6,6 +6,13 @@ MakeAKGFDotplot = function (presence, absence = NA, highdensity = NA, dataCRS = 
                             hd.col = "red", abs.shape = 16, pres.shape = 1, hd.shape = 16, 
                             abs.size = 0.1, pres.size = 1, hd.size = 1) {
   
+  presence = species.data[species.data[, s] > 0, ]
+  absence = species.data[species.data[, s] == 0, ]
+  highdensity = species.data[species.data[, s] > hd, ]
+  region = tolower(region)
+  dataCRS = raster.stack@crs
+  title.name = figure.name
+  
   region <- tolower(region)
   
   if (region %in% c("ebs", "bs.all", "sebs", "bs.south", "ecs", 
@@ -163,8 +170,8 @@ MakeAKGFDotplot = function (presence, absence = NA, highdensity = NA, dataCRS = 
       # dotplot +
       ggplot2::ggplot() + 
       ggplot2::geom_sf(data = abs.sf, 
-                                          alpha = 0.25, size = abs.size, shape = abs.shape, 
-                                          ggplot2::aes(color = factor(abs.fac)))
+                       alpha = 0.25, size = abs.size, shape = abs.shape, 
+                       ggplot2::aes(color = factor(abs.fac)))
   }
   
   dotplot <- dotplot + ggplot2::geom_sf(data = pres.sf, size = pres.size, 
@@ -179,7 +186,7 @@ MakeAKGFDotplot = function (presence, absence = NA, highdensity = NA, dataCRS = 
   
   dotplot <- dotplot + 
     # ggplot2::coord_sf(xlim = MAP$plot.boundary$x + ext.adjust[1:2], 
-                      # ylim = MAP$plot.boundary$y + ext.adjust[3:4]) + 
+    # ylim = MAP$plot.boundary$y + ext.adjust[3:4]) + 
     ggplot2::scale_x_continuous(name = "Longitude", breaks = MAP$lon.breaks) + 
     ggplot2::scale_y_continuous(name = "Latitude", breaks = MAP$lat.breaks) + 
     ggplot2::theme_bw() + 

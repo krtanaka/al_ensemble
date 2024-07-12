@@ -7,6 +7,7 @@ library(EFHSDM)
 library(raster)
 library(magrittr)
 library(maxnet)
+library(readr)
 
 masterplan <- utils::read.csv("Masterplan.csv")
 
@@ -31,170 +32,49 @@ EFH.path <- getwd()
 # Use name for most figures, but use name2 for deviance tables
 nice.names <- data.frame(
   
-  stringsAsFactors = F,
+  stringsAsFactors = FALSE,
   
   var = c(
-    "lon",
-    "lat",
-    "bdepth",
-    "slope",
-    # "aspectE",
-    # "aspectN",
-    # "curve",
-    "btemp",
-    "speed",
-    "tmax",
-    "BPI",
-    "phi",
-    "vitalrate",
-    "color",
-    "sponge",
-    "coral",
-    # "pen",
-    "area",
-    "bcurrentU",
-    "bcurrentV",
-    "bcurrentUSD",
-    "bcurrentVSD",
-    "lon*lat",
-    "bcurrentU*bcurrentV",
-    "bcurrentUSD*bcurrentVSD",
-    "aspectE*aspectN",
-    "rocky"
+    "lon", "lat", "bdepth", "slope", "btemp", "speed", "tmax", "BPI", "phi",
+    "vitalrate", "color", "sponge", "coral", "area", "bcurrentU", "bcurrentV",
+    "bcurrentUSD", "bcurrentVSD", "lon*lat", "bcurrentU*bcurrentV",
+    "bcurrentUSD*bcurrentVSD", "aspectE*aspectN", "rocky"
   ),
   
   name = c(
-    "Longitude",
-    "Latitude",
-    "Depth (m)",
-    "Slope (degrees)",
-    # "Slope Eastness",
-    # "Slope Northness",
-    # "Terrain Curvature",
-    "Temperature (C)",
-    "Current speed (m/s)",
-    "Tidal Maximum (cm/s)",
-    "BPI",
-    "Sediment Grain size (phi)",
-    "Growth Potential (g/g/day)",
-    "Ocean color",
-    "Sponge presence",
-    "Coral presence",
-    # "Pennatulacean presence",
-    "Area Swept",
-    "Current Velocity East (m/s)",
-    "Current Velocity North (m/s)",
-    "Current Velocity East SD (m/s)",
-    "Current Velocity North SD (m/s)",
-    "Position (lon,lat)",
-    "Current Velocity (east,north)",
-    "Current Velocity SD",
-    "Slope Aspect (east,north)",
-    "Bottom Rockiness (%)"
+    "Longitude", "Latitude", "Depth (m)", "Slope (degrees)", "Temperature (C)",
+    "Current speed (m/s)", "Tidal Maximum (cm/s)", "BPI",
+    "Sediment Grain size (phi)", "Growth Potential (g/g/day)", "Ocean color",
+    "Sponge presence", "Coral presence", "Area Swept",
+    "Current Velocity East (m/s)", "Current Velocity North (m/s)",
+    "Current Velocity East SD (m/s)", "Current Velocity North SD (m/s)",
+    "Position (lon,lat)", "Current Velocity (east,north)", "Current Velocity SD",
+    "Slope Aspect (east,north)", "Bottom Rockiness (%)"
   ),
   
   name2 = c(
-    "longitude",
-    "latitude",
-    "bottom depth",
-    "slope",
-    # "aspect east",
-    # "aspect north",
-    # "curvature",
-    "bottom temperature",
-    "current speed",
-    "tidal maximum",
-    "BPI",
-    "phi",
-    "growth potential",
-    "color",
-    "sponge presence",
-    "coral presence",
-    # "pennatulacean presence",
-    "area swept",
-    "current east",
-    "current north",
-    "current east SD",
-    "current north SD",
-    "position",
-    "current",
-    "current SD",
-    "slope aspect",
-    "rockiness"
+    "longitude", "latitude", "bottom depth", "slope", "bottom temperature",
+    "current speed", "tidal maximum", "BPI", "phi", "growth potential", "color",
+    "sponge presence", "coral presence", "area swept", "current east",
+    "current north", "current east SD", "current north SD", "position",
+    "current", "current SD", "slope aspect", "rockiness"
   )
-  
 )
 
 nice.names2 <- data.frame(var = nice.names$var,
                           name = nice.names$name,
                           stringsAsFactors = F)
 
-# done <- F
-#
-# while(done == F){
-
-# now, going to figure out which species to do next
-
-# if (is.na(species.vec)) {
-#   species.vec <- unique(masterplan$Abbreviation)
-# }
-#
-# if (is.na(region.vec)) {
-#   region.vec <- c("AI", "EBS", "GOA")
-# }
-#
-# unclaimed <- which(is.na(masterplan$Claimed) &
-#                      masterplan$Region %in% region.vec &
-#                      masterplan$Abbreviation %in% species.vec)
-#
-# if(length(unclaimed) == 0 & rerun == F){
-#
-#   print("No unclaimed models; ending routine!!!")
-#   done<-T
-#
-# } else {
-
-# alternately, you can just set a value for i here to run a single species
-# i <- unclaimed[1]
-# i = 1
-
-# if(rerun){
-#   
-#   if(length(species.vec) > 1 | length(region.vec) > 1){
-#     stop("Rerun option can only accept one species at a time")
-#   }
-#   
-i = which(masterplan$Abbreviation == species.vec & masterplan$Region == region.vec)
-#   
-#   done <- T
-#   
-# }
-
-# masterplan$Claimed[i] <- as.character(Sys.time())
-# 
-# masterplan$Computer[i] <- computer.name
-# 
-# if(update.table){
-#   
-#   try(utils::write.csv(x = masterplan,file = paste0(EFH.path,"/Masterplan.csv"), row.names = F))
-#   try(utils::write.csv(x = masterplan,file = paste0(EFH.path,"/ProgressChecker.csv"), row.names = F))
-#   
-# }
-
-region0 <- masterplan$Region[i]
+i <- which(masterplan$Abbreviation == species.vec & masterplan$Region == region.vec)
+i <- 300
 
 s <- masterplan$Abbreviation[i]
 
 figure.name <- stringr::str_to_sentence(masterplan$Figure_name[i])
 
-#behold the main loop
 print(paste0("Starting species: ",figure.name,"; Number ",i," of ",nrow(masterplan)))
 
-#Check data and load if necessary
-
-# if(region0 != region){
-
-region <- region0
+region <- "GOA"
 
 bathy <- raster::raster(paste0(EFH.path, "/Variables/Variables_", region, "_1km/Bathy"))
 slope <- raster::raster(paste0(EFH.path, "/Variables/Variables_", region, "_1km/Slope"))
@@ -203,9 +83,6 @@ btemp <- raster::raster(paste0(EFH.path, "/Variables/Variables_", region, "_1km/
 btemp <- raster::crop(x = btemp, y = bathy)
 BPI <- raster::raster(paste0(EFH.path, "/Variables/Variables_", region, "_1km/BPI"))
 BPI <- raster::crop(x = BPI, y = bathy)
-# Curve <- raster::raster(paste0(EFH.path, "/Variables/Variables_", region, "_1km/Curve_Mean"))
-# AspectE <- raster::raster(paste0(EFH.path, "/Variables/Variables_", region, "_1km/Aspect_East"))
-# AspectN <- raster::raster(paste0(EFH.path, "/Variables/Variables_", region, "_1km/Aspect_North"))
 
 lat <- raster::init(bathy, v ='y')
 lat <- raster::mask(lat, bathy, overwrite = F)
@@ -214,127 +91,31 @@ lon <- raster::mask(lon, bathy, overwrite = F)
 
 coral <- raster::raster(paste0(EFH.path, "/Variables/Variables_", region, "_1km/Coralfactor"))
 sponge <- raster::raster(paste0(EFH.path, "/Variables/Variables_", region, "_1km/Spongefactor"))
-# whips <- raster::raster(paste0(EFH.path, "/Variables/Variables_", region, "_1km/Whipsfactor"))
 
 east <- raster::raster(paste0(EFH.path, "/Variables/Variables_", region, "_1km/ROMSbcurrentEastings"))
 north <- raster::raster(paste0(EFH.path, "/Variables/Variables_", region, "_1km/ROMSbcurrentNorthings"))
 eastSD <- raster::raster(paste0(EFH.path, "/Variables/Variables_", region, "_1km/ROMSbEastingsSD"))
 northSD <- raster::raster(paste0(EFH.path, "/Variables/Variables_", region, "_1km/ROMSbNorthingsSD"))
-
-# if(region == "EBS"){
-#   
-#   phi <- raster::raster(paste0(EFH.path, "/Variables/Variables_EBS_1km/phi"))
-#   
-#   raster.stack <- raster::stack(
-#     lon,
-#     lat,
-#     # bathy,
-#     slope,
-#     # AspectE,
-#     # AspectN,
-#     # Curve,
-#     btemp,
-#     east,
-#     north,
-#     eastSD,
-#     northSD,
-#     tmax,
-#     phi,
-#     BPI,
-#     sponge,
-#     coral,
-#     whips
-#   )
-#   
-#   names(raster.stack) <- c(
-#     "lon",
-#     "lat",
-#     # "bdepth",
-#     "slope",
-#     # "aspectE",
-#     # "aspectN",
-#     # "curve",
-#     "btemp",
-#     "bcurrentU",
-#     "bcurrentV",
-#     "bcurrentUSD",
-#     "bcurrentVSD",
-#     "tmax",
-#     "phi",
-#     "BPI",
-#     "sponge",
-#     "coral",
-#     "pen"
-#   )
-#   
-# }
-# GOA and AI don't have sediment grabs to calculate phi, so there is a "rockiness" variable instead
-# if(region %in% c("AI","GOA")){
-#   
 rocky <- raster::raster(paste0(EFH.path, "/Variables/Variables_", region, "_1km/rocky"))
-#   
+
 raster.stack <- raster::stack(
-  lon,
-  lat,
-  # bathy,
-  slope,
-  # AspectE,
-  # AspectN,
-  # Curve,
-  btemp,
-  east,
-  north,
-  eastSD,
-  northSD,
-  tmax,
-  rocky,
-  BPI,
-  sponge,
-  coral
-  # whips
+  lon, lat, slope, btemp, east, north, 
+  eastSD, northSD, tmax, rocky, BPI, 
+  sponge, coral
 )
+
 names(raster.stack) <- c(
-  "lon",
-  "lat",
-  # "bdepth",
-  "slope",
-  # "aspectE",
-  # "aspectN",
-  # "curve",
-  "btemp",
-  "bcurrentU",
-  "bcurrentV",
-  "bcurrentUSD",
-  "bcurrentVSD",
-  "tmax",
-  "rocky",
-  "BPI",
-  "sponge",
-  "coral"
-  # "pen"
+  "lon", "lat", "slope", "btemp", "bcurrentU", "bcurrentV", 
+  "bcurrentUSD", "bcurrentVSD", "tmax", "rocky", "BPI", 
+  "sponge", "coral"
 )
 
-# }
-
-# ak.raster <- raster::raster(paste0(EFH.path,"/Variables/", region, "_Alaska_raster"))
 ak.raster <- NULL
 
-# if(region == "GOA"){
-#   
-#   GOA.mask <- raster::raster(paste0(EFH.path,"/Variables/GOA_mask_raster"))
-#   raster.stack<-raster::mask(raster.stack,GOA.mask)
-#   
-# }
-
-# These are sizes for png files for various figures
-png.width <- 8
-png.height <- ifelse(region == "EBS", 8, 3.5)
-
 # Load the data
+# region_data_all = read_csv("region_data_all.csv")
 region.data <- subset(region_data_all, year >= 2012)
-region.data <- region.data[sample(1:nrow(region.data), 1000, replace = F),]
-
-# region.data <- utils::read.csv(paste0(EFH.path,"/Trawl_Models2/",region,"/all_",region,"_data_2021.csv"))
+# region.data <- region.data[sample(1:nrow(region.data), 1000, replace = F),]
 
 # Small adjustment for the REBS complex & dogfish
 region.data$j_rebs <- region.data$j_rebs + region.data$j_rough + region.data$j_bspot
@@ -347,8 +128,6 @@ region.data$coral <- as.factor(as.integer(region.data$coral > 0))
 region.data$pen <- as.factor(as.integer(region.data$pen > 0))
 
 region.data$logarea <- log(region.data$area)
-
-# }
 
 # Subset the data for the species based on the start year
 species.data0 <- subset(region.data, year >= masterplan$Start_Year[i])
@@ -373,7 +152,7 @@ n.pres <- sum(species.data0[, s] > 0)
 
 # # Check if there are enough presence samples
 # if(n.pres < 50) {
-#   
+# 
 #   print(paste("WARNING: Insufficient samples for", region, figure.name, ". Proceeding to next species/stage", sep = " "))
 #   species.data <- species.data0
 #   maxnet.abund.check <- FALSE
@@ -383,10 +162,8 @@ n.pres <- sum(species.data0[, s] > 0)
 #   negbin.abund.check <- FALSE
 #   ensemble.success <- FALSE
 #   start.time <- Sys.time()
-#   
+# 
 # }
-
-# if(n.pres >= 50) {
 
 # if there are at least 50 total hauls with presence, we will at least run some kind of model
 pres.table <- table(species.data0[species.data0[, s] > 0, group.var])
@@ -429,20 +206,8 @@ covars2d <- list(c("lon","lat"),
                  c("bcurrentU","bcurrentV"),
                  c("bcurrentUSD","bcurrentVSD"))
 
-# if(region == "EBS"){
-#   
-#   covars<-c("bdepth","slope","aspectE","aspectN","curve","btemp","tmax","phi","BPI")
-#   maxnet.covars<-c("bcurrentU","bcurrentV","bcurrentUSD","bcurrentVSD","bdepth",
-#                    "slope","aspectE","aspectN","curve","btemp","tmax","phi","BPI")
-#   
-# }else{
-
 covars <- c(
-  # "bdepth",
   "slope",
-  # "aspectE",
-  # "aspectN",
-  # "curve",
   "btemp",
   "tmax",
   "rocky",
@@ -453,18 +218,13 @@ maxnet.covars <- c(
   "bcurrentV",
   "bcurrentUSD",
   "bcurrentVSD",
-  # "bdepth",
   "slope",
-  # "aspectE",
-  # "aspectN",
-  # "curve",
   "btemp",
   "tmax",
   "rocky",
   "BPI")
-# }
 
-cofactors <- c("sponge","coral","pen")[1:2]
+cofactors <- c("sponge","coral")
 
 maxnet2d <- list(c("bcurrentU", "bcurrentV"),
                  c("bcurrentUSD", "bcurrentVSD"))
@@ -478,20 +238,23 @@ dir.create(species.path)
 # Calculate the 90th percentile of presence data
 hd <- quantile(species.data[species.data[, s] > 0, s], probs = 0.9)
 
-# # Generate dot plot
-# grDevices::png(paste0(species.path, "/dotplot.png"), 
-#                width = png.width, height = png.height, res = 300, units = "in")
+# source("MakeAKGFDotplot.R", echo = T)
+# MakeAKGFDotplot(presence = species.data[species.data[, s] > 0, ],
+#                 absence = species.data[species.data[, s] == 0, ],
+#                 highdensity = species.data[species.data[, s] > hd, ],
+#                 region = tolower(region), 
+#                 dataCRS = raster.stack@crs,
+#                 title.name = figure.name)
 
-source("C:/Users/kisei.tanaka/al_ensemble/MakeAKGFDotplot.R", echo = TRUE)
+ggplot() + 
+  geom_point(data = species.data, aes(lon, lat), alpha = 0.2, size = 0.1) + 
+  geom_point(data = species.data[species.data[, s] > 0, ], aes(lon, lat), color = "red", alpha = 0.5) + 
+  geom_point(data = species.data[species.data[, s] > hd, ], aes(lon, lat), color = "blue", alpha = 0.8) + 
+  theme_bw() +
+  theme(axis.title = element_blank(),
+        axis.text = element_blank())
 
-MakeAKGFDotplot(presence = species.data[species.data[, s] > 0, ],
-                absence = species.data[species.data[, s] == 0, ],
-                highdensity = species.data[species.data[, s] > hd, ],
-                region = tolower(region), 
-                dataCRS = raster.stack@crs,
-                title.name = figure.name)
-
-# grDevices::dev.off()
+ggsave(last_plot(), filename = paste0(species.path, "/dotplot.png"), width = 8, height = 3, units = "in")
 
 # this looks cumbersome, but automates the gam formulas
 basic.gam.table <- data.frame(
@@ -510,6 +273,7 @@ basic.gam.table <- data.frame(
 alt.gam.table <- basic.gam.table
 alt.gam.table$bs[alt.gam.table$bs == "tp"] <- "cr"
 
+source("AssembleGAMFormula.R")
 basic.gam.formula <- AssembleGAMFormula(yvar = s, gam.table = basic.gam.table)
 alt.gam.formula <- AssembleGAMFormula(yvar = s, gam.table = alt.gam.table)
 basic.hgam.formula <- AssembleGAMFormula(yvar = s, gam.table = basic.gam.table,hgam=T)
@@ -521,17 +285,23 @@ alt.hgam.formula <- AssembleGAMFormula(yvar = s, gam.table = alt.gam.table,hgam=
 
 print(paste(Sys.time(), "Starting the Maxnet model for", region, figure.name, sep = " "))
 
-maxnet.converge0 <- rep(F,6)
-maxnet.abund.check0 <- rep(F,6)
+maxnet.converge0 <- rep(F, 6)
+maxnet.abund.check0 <- rep(F, 6)
 maxnet.model.list <- list()
 maxnet.abund.list <- list()
 maxnet.cv.model.list <- list()
 maxnet.error.list <- list()
 maxnet.pred.list <- list()
-maxnet.scale.vec <- rep(NA,6)
-maxnet.rmse0 <- rep(NA,6)
+maxnet.scale.vec <- rep(NA, 6)
+maxnet.rmse0 <- rep(NA, 6)
 
 # loop through and check different multiplication constants
+source("FitMaxnet.R")
+source("FitGAM.R")
+source("FitHurdleGAM.R")
+source("MakeMaxEntAbundance.R")
+source("CrossValidateModel.R")
+
 for(r in 1:6){
   
   # r = 1
@@ -609,6 +379,7 @@ for(r in 1:6){
 }
 
 # as long as some of the constants managed to converge, carry something forward
+source("GetMaxnetEffects.R")
 if(sum(is.na(maxnet.rmse0)) != 6){
   
   maxnet.model <- maxnet.model.list[[which.min(maxnet.rmse0)]]
@@ -732,12 +503,14 @@ if(cloglog.converge & cloglog.abund.check){
   
   print(paste0(Sys.time(),"Cloglog model successful for ",figure.name," starting evaluations"))
   
+  source("CrossValidateModel.R")
   cloglog.cv <- CrossValidateModel(model = cloglog.model,
                                    model.type = "cloglog",
                                    data = species.data,
                                    scale.preds = T,
                                    species = s,
-                                   group = group.var,key="hauljoin")
+                                   group = group.var,
+                                   key = "hauljoin")
   
   cloglog.errors <- cloglog.cv[[1]]
   cloglog.cv.models <- cloglog.cv[[2]]
@@ -775,7 +548,7 @@ print(paste(Sys.time(),"Starting the Hurdle model for",region,figure.name,sep=" 
 try(hpoisson.model <- FitHurdleGAM(density.formula = basic.hgam.formula[[1]],
                                    prob.formula = basic.hgam.formula[[2]],
                                    data = species.data,
-                                   verbose = F,
+                                   verbose = T,
                                    select = T,
                                    reduce = T))
 
@@ -801,6 +574,7 @@ if(hpoisson.converge){
   
 }
 
+source("FitHurdleGAM.R")
 if(hpoisson.abund.check == F){
   
   rm(hpoisson.model, hpoisson.abund, hpoisson.scale)
@@ -1610,7 +1384,7 @@ MakeEnsembleXtable(weights = model.weights,
                    filename = paste0(species.path,"/ensemble_table.html"))
 
 ensemble.success <- T
-}
+
 
 # # update the progress table
 # progress.table <- utils::read.csv(file = paste0(EFH.path, "/ModelProgress_offset_reruns.csv"), stringsAsFactors = F)
