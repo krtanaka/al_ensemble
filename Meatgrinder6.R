@@ -1357,7 +1357,7 @@ for(m in 1:length(model.vec)){
     
     tryCatch({
       
-      if(model.vec[m]=="maxnet"){
+      if(model.vec[m] == "maxnet"){
         
         MakeXtable(model = maxnet.model,
                    model.type = "maxnet",
@@ -1391,7 +1391,9 @@ for(m in 1:length(model.vec)){
                    filename = paste0(species.path,"/",model.name,"_table.html"))
       }
     }, error = function(e) {
+      
       cat("Error in MakeXtable, iteration", m, ": ", e$message, "\n")
+      
     })
     
     
