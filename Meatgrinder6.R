@@ -1307,7 +1307,7 @@ for(m in 1:length(model.vec)){
     grDevices::dev.off()
     
     # Abundance plot
-    grDevices::png(filename = paste0(species.path,"/", model.name, "_abundance.png"),
+    grDevices::png(filename = paste0(species.path, "/", model.name, "_abundance.png"),
                    width = png.width, height = png.height, res = 600, units = "in")
     
     MakeAKGFDensityplot(region = tolower(region),
@@ -1315,7 +1315,7 @@ for(m in 1:length(model.vec)){
                         buffer = .98,
                         survey.area = raster.stack$slope,
                         legend.title = "Abundance",
-                        title.name = paste0(figure.name,"\n(",model.name,")"))
+                        title.name = paste0(figure.name, "\n(", model.name, ")"))
     
     grDevices::dev.off()
     
@@ -1342,13 +1342,17 @@ for(m in 1:length(model.vec)){
                                    region = tolower(region),
                                    crs = raster.stack@crs)
       
-      grDevices::png(filename = paste0(species.path,"/",model.name,"_effects.png"),
+      grDevices::png(filename = paste0(species.path, "/", model.name, "_effects.png"),
                      width = 8, height = 8, units = "in", res = 600)
+      
       gridExtra::grid.arrange(nrow = 3, ncol = 3, grobs = eff.plot.list)
+      
       grDevices::dev.off()
       
     }, error = function(e) {
+      
       cat("Error in Effectsplot, iteration", m, ": ", e$message, "\n")
+      
     })
     
     tryCatch({
