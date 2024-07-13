@@ -1029,6 +1029,7 @@ for(m in 1:length(model.vec)){
       
     }
     
+    source("FindEFHbreaks.R")
     m.breaks <- FindEFHbreaks(abund.raster = abund.list[[m]],
                               method = "percentile",
                               threshold = .0513,
@@ -1057,53 +1058,60 @@ for(m in 1:length(model.vec)){
     # quick plot of cv
     cv.raster <- sqrt(var.list[[m]])/(abund.list[[m]] + raster::cellStats(abund.list[[m]],max) * .01)
     
-    grDevices::png(filename = paste0(species.path, "/", model.name, "_abund_cv.png"), 
-                   width = png.width, height = png.height, res = 600, units = "in")
+    cv.raster %>% 
+      rasterToPoints() %>% 
+      as.data.frame() %>% 
+      ggplot(aes(x, y, fill = layer)) + 
+      geom_raster() + 
+      scale_fill_viridis_c(trans = "sqrt", "CV of Abundance", option = "A") + 
+      theme_bw() +
+      theme(axis.title = element_blank(),
+            axis.text = element_blank())
     
-    MakeAKGFDensityplot(region = tolower(region),
-                        density.map = cv.raster,
-                        buffer = .98,
-                        col.palette = "magma",
-                        col.palette.limits = c(.1,.9),
-                        # survey.area = raster.stack$bdepth,
-                        survey.area = raster.stack$slope,
-                        legend.title = "CV of Abundance",
-                        title.name = paste0(figure.name, "\n(", model.name, ")"))
-    
-    grDevices::dev.off()
+    ggsave(last_plot(), filename = paste0(species.path, "/", model.name, "_abund_cv.png"), width = 8, height = 3, units = "in")
     
     # Validation plot
-    grDevices::png(filename = paste0(species.path, "/", model.name, "_residuals.png"), 
-                   width = 6, height = 6, res = 600, units = "in")
-    
+    png(filename = paste0(species.path, "/", model.name, "_residuals.png"), width = 8, height = 8, units = "in", res = 300)
     MakeCrossValidationPlots(error.data = model.errors[[m]], method = "spearman", make.hist = F)
-    
-    grDevices::dev.off()
+    dev.off()
     
     # Abundance plot
-    grDevices::png(filename = paste0(species.path, "/", model.name, "_abundance.png"),
-                   width = png.width, height = png.height, res = 600, units = "in")
     
-    MakeAKGFDensityplot(region = tolower(region),
-                        density.map = abund.list[[m]],
-                        buffer = .98,
-                        survey.area = raster.stack$slope,
-                        legend.title = "Abundance",
-                        title.name = paste0(figure.name, "\n(", model.name, ")"))
+    density = abund.list[[m]] %>% 
+      rasterToPoints() %>% 
+      as.data.frame() 
     
-    grDevices::dev.off()
+    upper <- quantile(density$layer, 0.98, na.rm = TRUE)
+    density$layer[density$layer > upper] <- upper
+    
+    density %>% 
+      ggplot(aes(x, y, fill = layer)) + 
+      geom_raster() + 
+      scale_fill_viridis_c(trans = "sqrt", "Abundance", na.value = NA) + 
+      theme_bw() +
+      theme(axis.title = element_blank(),
+            axis.text = element_blank())
+    
+    ggsave(last_plot(), filename = paste0(species.path, "/", model.name, "_abundance.png"), width = 8, height = 3, units = "in")
+    
+    # MakeAKGFDensityplot(region = tolower(region),
+    #                     density.map = abund.list[[m]],
+    #                     buffer = .98,
+    #                     # survey.area = raster.stack$slope,
+    #                     legend.title = "Abundance",
+    #                     title.name = paste0(figure.name, "\n(", model.name, ")"))
     
     # EFH plot
-    grDevices::png(filename = paste0(species.path,"/", model.name,"_efh.png"),
-                   width = png.width, height = png.height, res = 600, units = "in")
-    
-    MakeAKGFEFHplot(region = tolower(region),
-                    efh.map = efh.list[[m]],
-                    survey.area = raster.stack$slope,
-                    legend.title = "Percentiles",
-                    title.name = paste0(figure.name,"\n(",model.name,")"))
-    
-    grDevices::dev.off()
+    # grDevices::png(filename = paste0(species.path,"/", model.name,"_efh.png"),
+    #                width = png.width, height = png.height, res = 600, units = "in")
+    # 
+    # MakeAKGFEFHplot(region = tolower(region),
+    #                 efh.map = efh.list[[m]],
+    #                 survey.area = raster.stack$slope,
+    #                 legend.title = "Percentiles",
+    #                 title.name = paste0(figure.name,"\n(",model.name,")"))
+    # 
+    # grDevices::dev.off()
     
     # Effects plot
     source("Effectsplot.R")
@@ -1111,8 +1119,8 @@ for(m in 1:length(model.vec)){
     tryCatch({
       
       eff.plot.list <- Effectsplot(effects.list = effects.list[[m]],
-                                   nice.names = nice.names,
-                                   vars = good.terms,
+                                   # nice.names = nice.names,
+                                   # vars = good.terms,
                                    region = tolower(region),
                                    crs = raster.stack@crs)
       
@@ -1385,26 +1393,6 @@ MakeEnsembleXtable(weights = model.weights,
 
 ensemble.success <- T
 
-
-# # update the progress table
-# progress.table <- utils::read.csv(file = paste0(EFH.path, "/ModelProgress_offset_reruns.csv"), stringsAsFactors = F)
-# 
-# progress.table$N[i] <- n.pres
-# 
-# progress.table$Maxnet[i] <- maxnet.abund.check
-# progress.table$Cloglog[i] <- cloglog.abund.check
-# progress.table$Hpoisson[i] <- hpoisson.abund.check
-# progress.table$Poisson[i] <- poisson.abund.check
-# progress.table$Negbin[i] <- negbin.abund.check
-# progress.table$Ensemble[i] <- ensemble.success
-# 
-# progress.table$Completed[i] <- as.character(Sys.time())
-# 
-# if(update.table){
-#   try(utils::write.csv(progress.table,file=paste0(EFH.path,"/ModelProgress_offset_reruns.csv"),row.names = F))
-#   try(utils::write.csv(x = progress.table,file =paste0(EFH.path,"/ProgressChecker.csv"),row.names = F))
-# }
-
 if(stop.early){
   stop("Stopping Early due to user selected request!!")
 }
@@ -1436,6 +1424,3 @@ rm(start.time, n.pres,
    weights, abund.list, drop.terms, good.terms, good.terms0, en.eff, en.eff2, error.table, model.errors, model.scales)
 
 print(paste0(Sys.time()," finished models for species: ",s))
-
-# }
-# }
