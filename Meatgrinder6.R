@@ -1296,6 +1296,7 @@ grDevices::dev.off()
 
 saveRDS(en.eff,file=paste0(species.path,"/effects_data.rds"))
 
+source("ValidateEnsemble.R")
 grDevices::png(filename = paste0(species.path,"/ensemble_residuals.png"), 
                width = 6, height = 6,res = 600, units="in")
 
@@ -1313,9 +1314,11 @@ grDevices::dev.off()
 en.auc.data <- data.frame(1:nrow(ensemble.preds),ensemble.preds$abund,ensemble.preds$prob)
 ensemble.auc <- PresenceAbsence::auc(en.auc.data)[1,1]
 
+source("PDE.R")
 ensemble.DevExpP <- PDE(obs = ensemble.preds$abund,pred = ensemble.preds$pred)
 
 # Ensemble abundance
+source("MakeAKGFDensityplot.R")
 grDevices::png(filename = paste0(species.path, "/ensemble_abundance.png"), 
                width = png.width, height = png.height, res = 600, units = "in")
 
