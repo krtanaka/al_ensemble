@@ -1330,6 +1330,7 @@ print(MakeAKGFDensityplot(region = tolower(region),
                           title.name = figure.name))
 grDevices::dev.off()
 
+source("MakeAKGFEFHplot.R")
 grDevices::png(filename = paste0(species.path, "/ensemble_efh.png"), 
                width = png.width, height = png.height, res = 600, units = "in")
 
@@ -1342,6 +1343,7 @@ print(MakeAKGFEFHplot(region = tolower(region),
 grDevices::dev.off()
 
 #ensemble variance
+source("GetEnsembleVariance.R")
 ensemble.var <- GetEnsembleVariance(model.weights = model.weights,
                                     variance.list = var.list, 
                                     abund.list = abund.list, 
@@ -1352,7 +1354,7 @@ raster::writeRaster(x = ensemble.var, filename = paste0(species.path, "/ensemble
 ensemble.cv.raster <- sqrt(ensemble.var)/(ensemble.abund+raster::cellStats(ensemble.abund, max) * .01)
 
 grDevices::png(filename = paste0(species.path, "/ensemble_cv.png"), 
-               width = png.width, height = png.height, res = 600, units = "in")
+               width = 8, height = 4, res = 600, units = "in")
 
 print(MakeAKGFDensityplot(region = tolower(region), 
                           density.map = ensemble.cv.raster, 
