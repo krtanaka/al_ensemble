@@ -3,7 +3,7 @@
 
 rm(list = ls())
 
-library(EFHSDM)
+# library(EFHSDM)
 library(raster)
 library(magrittr)
 library(maxnet)
@@ -66,7 +66,7 @@ nice.names2 <- data.frame(var = nice.names$var,
                           stringsAsFactors = F)
 
 i <- which(masterplan$Abbreviation == species.vec & masterplan$Region == region.vec)
-i <- 300
+i <- 100
 
 s <- masterplan$Abbreviation[i]
 
@@ -113,7 +113,7 @@ names(raster.stack) <- c(
 ak.raster <- NULL
 
 # Load the data
-# region_data_all = read_csv("region_data_all.csv")
+region_data_all = read_csv("region_data_all.csv") %>% as.data.frame()
 region.data <- subset(region_data_all, year >= 2012)
 # region.data <- region.data[sample(1:nrow(region.data), 1000, replace = F),]
 
@@ -253,6 +253,7 @@ ggplot() +
   theme_bw() +
   theme(axis.title = element_blank(),
         axis.text = element_blank())
+  
 
 ggsave(last_plot(), filename = paste0(species.path, "/dotplot.png"), width = 8, height = 3, units = "in")
 
@@ -301,6 +302,8 @@ source("FitGAM.R")
 source("FitHurdleGAM.R")
 source("MakeMaxEntAbundance.R")
 source("CrossValidateModel.R")
+source("MaxnetCoefs.R")
+source("RMSE.R")
 
 for(r in 1:6){
   
@@ -434,6 +437,9 @@ try(cloglog.model <- FitGAM(gam.formula = basic.gam.formula,
 cloglog.converge <- exists("cloglog.model") & 
   any(is.infinite(predict(cloglog.model, type = "response"))) == F &
   any(is.na(predict(cloglog.model, type = "response"))) == F
+
+source("MakeGAMAbundance.R")
+source("AutodetectGAMTerms.R")
 
 if(cloglog.converge){
   
@@ -946,6 +952,7 @@ names(rmse.vec) <- model.vec
 names(model.errors) <- model.vec
 names(model.scales) <- model.vec
 
+source("MakeEnsemble.R")
 # Construct the weights to see which models need additional steps
 print(paste(Sys.time(), "Making ensemble for", region, figure.name, sep = " "))
 model.weights <- MakeEnsemble(rmse = rmse.vec, minimum = 0.1, model.types = model.types)
@@ -960,6 +967,11 @@ model.breaks <- vector(length = length(model.vec))
 abund.list <- list()
 efh.list <- list()
 var.list <- list()
+
+source("MaxnetStats.R")
+source("MakeVarianceRasters.R")
+source("MakeCrossValidationPlots.R")
+source("GAMStats.R")
 
 # now loop through a run the extra tests for each one
 for(m in 1:length(model.vec)){
@@ -1196,6 +1208,8 @@ for(m in 1:length(model.vec)){
 
 print("Constructing the ensemble")
 
+source("MakeEnsembleAbundance.R")
+
 # now make the actual ensemble
 ensemble.abund <- MakeEnsembleAbundance(model.weights = model.weights,
                                         abund.list = abund.list, 
@@ -1261,6 +1275,7 @@ if(ncol(dev.dat) > 2){
 
 good.terms <- dev.dat$name[order(ave.devs, decreasing = T)[1:min(9, length(ave.devs))]]
 
+source("GetEnsembleEffects.R")
 en.eff <- GetEnsembleEffects(effects.list = effects.list, 
                              model.weights = model.weights, 
                              vars = "all", 
