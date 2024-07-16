@@ -66,7 +66,7 @@ nice.names2 <- data.frame(var = nice.names$var,
                           stringsAsFactors = F)
 
 i <- which(masterplan$Abbreviation == species.vec & masterplan$Region == region.vec)
-i <- 100
+i <- 250
 
 s <- masterplan$Abbreviation[i]
 
@@ -150,20 +150,20 @@ species.data0$Folds <- sample(random.folds, size = nrow(species.data0), replace 
 # Calculate the number of presence records
 n.pres <- sum(species.data0[, s] > 0)
 
-# # Check if there are enough presence samples
-# if(n.pres < 50) {
-# 
-#   print(paste("WARNING: Insufficient samples for", region, figure.name, ". Proceeding to next species/stage", sep = " "))
-#   species.data <- species.data0
-#   maxnet.abund.check <- FALSE
-#   cloglog.abund.check <- FALSE
-#   hpoisson.abund.check <- FALSE
-#   poisson.abund.check <- FALSE
-#   negbin.abund.check <- FALSE
-#   ensemble.success <- FALSE
-#   start.time <- Sys.time()
-# 
-# }
+# Check if there are enough presence samples
+if(n.pres < 50) {
+
+  print(paste("WARNING: Insufficient samples for", region, figure.name, ". Proceeding to next species/stage", sep = " "))
+  species.data <- species.data0
+  maxnet.abund.check <- FALSE
+  cloglog.abund.check <- FALSE
+  hpoisson.abund.check <- FALSE
+  poisson.abund.check <- FALSE
+  negbin.abund.check <- FALSE
+  ensemble.success <- FALSE
+  start.time <- Sys.time()
+
+}
 
 # if there are at least 50 total hauls with presence, we will at least run some kind of model
 pres.table <- table(species.data0[species.data0[, s] > 0, group.var])
