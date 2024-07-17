@@ -11,19 +11,15 @@ library(readr)
 
 masterplan <- utils::read.csv("Masterplan.csv")
 
-computer.name <- "JHLaptop"
+# computer.name <- "JHLaptop"
 
-region <- F
+# region <- F
 
 # Use this to specify a particular species or subset of species and some other control parameters
 # Set species.vec and region.vec to NA in order to run everything
 
-species.vec <- "dogfish"   # Use the column abbreviations to select specific species
-region.vec  <- "GOA"       # Specify the region
-stop.early  <- TRUE        # Useful if you want to stop and check results
-update.table <- TRUE       # Update table flag
-rerun       <- TRUE        # Rerun flag
-make.ensemble <- TRUE      # Make ensemble flag
+# species.vec <- "dogfish"   # Use the column abbreviations to select specific species
+# region.vec  <- "GOA"       # Specify the region
 group.var   <- "Folds"     # Do you want to group by spatial zone or random fold
 
 EFH.path <- getwd()
@@ -66,13 +62,13 @@ nice.names2 <- data.frame(var = nice.names$var,
                           stringsAsFactors = F)
 
 i <- which(masterplan$Abbreviation == species.vec & masterplan$Region == region.vec)
-i <- 250
+i <- 150
 
 s <- masterplan$Abbreviation[i]
 
 figure.name <- stringr::str_to_sentence(masterplan$Figure_name[i])
 
-print(paste0("Starting species: ",figure.name,"; Number ",i," of ",nrow(masterplan)))
+cat(paste0("Starting species: ",figure.name,"; Number ",i," of ",nrow(masterplan), "\n"))
 
 region <- "GOA"
 
@@ -152,7 +148,7 @@ n.pres <- sum(species.data0[, s] > 0)
 
 # Check if there are enough presence samples
 if(n.pres < 50) {
-
+  
   print(paste("WARNING: Insufficient samples for", region, figure.name, ". Proceeding to next species/stage", sep = " "))
   species.data <- species.data0
   maxnet.abund.check <- FALSE
@@ -162,7 +158,7 @@ if(n.pres < 50) {
   negbin.abund.check <- FALSE
   ensemble.success <- FALSE
   start.time <- Sys.time()
-
+  
 }
 
 # if there are at least 50 total hauls with presence, we will at least run some kind of model
@@ -253,7 +249,7 @@ ggplot() +
   theme_bw() +
   theme(axis.title = element_blank(),
         axis.text = element_blank())
-  
+
 
 ggsave(last_plot(), filename = paste0(species.path, "/dotplot.png"), width = 8, height = 3, units = "in")
 
@@ -280,9 +276,7 @@ alt.gam.formula <- AssembleGAMFormula(yvar = s, gam.table = alt.gam.table)
 basic.hgam.formula <- AssembleGAMFormula(yvar = s, gam.table = basic.gam.table,hgam=T)
 alt.hgam.formula <- AssembleGAMFormula(yvar = s, gam.table = alt.gam.table,hgam=T)
 
-##############
 ### Maxnet ###
-##############
 
 print(paste(Sys.time(), "Starting the Maxnet model for", region, figure.name, sep = " "))
 
@@ -420,9 +414,7 @@ if(sum(is.na(maxnet.rmse0)) != 6){
   
 }
 
-#####################
 ### cloglog paGAM ###
-#####################
 
 print(paste(Sys.time(), "Starting the Cloglog GAM for", region, figure.name, sep = " "))
 
@@ -545,9 +537,7 @@ if(cloglog.converge & cloglog.abund.check){
   
 }
 
-#################
 ### HurdleGAM ###
-#################
 
 print(paste(Sys.time(),"Starting the Hurdle model for",region,figure.name,sep=" "))
 
@@ -661,9 +651,7 @@ if(hpoisson.converge & hpoisson.abund.check){
 }
 
 
-##################
 ### Normal GAM ###
-##################
 
 print(paste(Sys.time(),"Starting the poisson model for",region,figure.name,sep=" "))
 
@@ -774,9 +762,8 @@ if(poisson.converge & poisson.abund.check){
   
 }
 
-#####################################
+
 ### negative binomial poisson GAM ###
-#####################################
 
 print(paste(Sys.time(),"Starting the Negative Binomial GAM model for", region, figure.name, sep = " "))
 
@@ -887,9 +874,7 @@ if(negbin.converge & negbin.abund.check){
   
 }
 
-###########################################
 ### Special rules for exceptional cases ###
-###########################################
 
 if (region == "GOA" & s == "a_atka") {
   maxnet.converge <- FALSE
@@ -901,9 +886,7 @@ if (region == "GOA" & s == "j_sraker") {
   hpoisson.abund.check <- FALSE
 }
 
-##############################################################################
 ### Now figure out which models were run and make summary tables and plots ###
-##############################################################################
 
 models <- c("maxnet","cloglog","hpoisson","poisson","negbin")
 
@@ -1320,7 +1303,7 @@ ensemble.DevExpP <- PDE(obs = ensemble.preds$abund,pred = ensemble.preds$pred)
 # Ensemble abundance
 source("MakeAKGFDensityplot.R")
 grDevices::png(filename = paste0(species.path, "/ensemble_abundance.png"), 
-               width = png.width, height = png.height, res = 600, units = "in")
+               width = 8, height = 4, res = 600, units = "in")
 
 print(MakeAKGFDensityplot(region = tolower(region), 
                           density.map = ensemble.abund, 
@@ -1332,7 +1315,7 @@ grDevices::dev.off()
 
 source("MakeAKGFEFHplot.R")
 grDevices::png(filename = paste0(species.path, "/ensemble_efh.png"), 
-               width = png.width, height = png.height, res = 600, units = "in")
+               width = 8, height = 4, res = 600, units = "in")
 
 print(MakeAKGFEFHplot(region = tolower(region), 
                       efh.map = ensemble.efh, 
@@ -1412,10 +1395,6 @@ MakeEnsembleXtable(weights = model.weights,
                    filename = paste0(species.path,"/ensemble_table.html"))
 
 ensemble.success <- T
-
-if(stop.early){
-  stop("Stopping Early due to user selected request!!")
-}
 
 #remove anything you don't want to carry over to the next species/life-stage
 rm(start.time, n.pres, 
