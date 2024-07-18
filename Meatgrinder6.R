@@ -61,7 +61,7 @@ nice.names2 <- data.frame(var = nice.names$var,
                           name = nice.names$name,
                           stringsAsFactors = F)
 
-i <- which(masterplan$Abbreviation == species.vec & masterplan$Region == region.vec)
+# i <- which(masterplan$Abbreviation == species.vec & masterplan$Region == region.vec)
 i <- 150
 
 s <- masterplan$Abbreviation[i]
@@ -85,14 +85,14 @@ lat <- raster::mask(lat, bathy, overwrite = F)
 lon <- raster::init(bathy, v ='x')
 lon <- raster::mask(lon, bathy, overwrite = F)
 
-coral <- raster::raster(paste0(EFH.path, "/Variables/Variables_", region, "_1km/Coralfactor"))
-sponge <- raster::raster(paste0(EFH.path, "/Variables/Variables_", region, "_1km/Spongefactor"))
+coral <- raster::raster(paste0(EFH.path, "/Variables/goa/Variables_", region, "_1km/Coralfactor"))
+sponge <- raster::raster(paste0(EFH.path, "/Variables/goa/Variables_", region, "_1km/Spongefactor"))
 
-east <- raster::raster(paste0(EFH.path, "/Variables/Variables_", region, "_1km/ROMSbcurrentEastings"))
-north <- raster::raster(paste0(EFH.path, "/Variables/Variables_", region, "_1km/ROMSbcurrentNorthings"))
-eastSD <- raster::raster(paste0(EFH.path, "/Variables/Variables_", region, "_1km/ROMSbEastingsSD"))
-northSD <- raster::raster(paste0(EFH.path, "/Variables/Variables_", region, "_1km/ROMSbNorthingsSD"))
-rocky <- raster::raster(paste0(EFH.path, "/Variables/Variables_", region, "_1km/rocky"))
+east <- raster::raster(paste0(EFH.path, "/Variables/goa/Variables_", region, "_1km/ROMSbcurrentEastings"))
+north <- raster::raster(paste0(EFH.path, "/Variables/goa/Variables_", region, "_1km/ROMSbcurrentNorthings"))
+eastSD <- raster::raster(paste0(EFH.path, "/Variables/goa/Variables_", region, "_1km/ROMSbEastingsSD"))
+northSD <- raster::raster(paste0(EFH.path, "/Variables/goa/Variables_", region, "_1km/ROMSbNorthingsSD"))
+rocky <- raster::raster(paste0(EFH.path, "/Variables/goa/Variables_", region, "_1km/rocky"))
 
 raster.stack <- raster::stack(
   lon, lat, slope, btemp, east, north, 

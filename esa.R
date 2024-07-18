@@ -66,14 +66,13 @@ land.raster <- NULL
 region_data_all = read_csv("region_data_all.csv") %>% as.data.frame()
 region.data <- subset(region_data_all, year >= 2012)3
 
-region.data = read_csv("A_globiceps_AS.csv")
-region.data = read_csv("I_craterformis_AS.csv")
+region.data = read_csv("A_globiceps_AS.csv") %>% filter(ISLAND == "Tutuila") %>% as.data.frame()
+region.data = read_csv("I_craterformis_AS.csv") %>% filter(ISLAND == "Tutuila") %>% as.data.frame()
 
 region.data = region.data %>% 
   distinct(LONGITUDE, LATITUDE, AdColCount)
 
 colnames(region.data) = c("lon", "lat", s)
-
 
 # region.data <- region.data[sample(1:nrow(region.data), 1000, replace = F),]
 
@@ -102,7 +101,7 @@ species.data0$Folds <- sample(random.folds, size = nrow(species.data0), replace 
 n.pres <- sum(species.data0[, s] > 0)
 
 # Check if there are enough presence samples
-if(n.pres < 50) {
+if(n.pres < 40) {
   
   print(paste("WARNING: Insufficient samples for", region, figure.name, ". Proceeding to next species/stage", sep = " "))
   species.data <- species.data0
@@ -123,16 +122,16 @@ smallest <- min(n.pres - pres.table)
 # New reallocation loop, basically, if one fold has too many of the presences, then the largest fold
 # donates a few cases to the smallest fold, loop continues until model always has at least 40 to train with
 
-if(smallest < 40){
+if(smallest < 30){
   
   species.data01 <- species.data0
   
-  while(smallest < 40){
+  while(smallest < 30){
     
     least.zone <- names(pres.table)[which.min(pres.table)]
     most.zone <- names(pres.table)[which.max(pres.table)]
     
-    n.donate <- 40 - smallest
+    n.donate <- 30 - smallest
     donors <- which(species.data01[,group.var] == most.zone & species.data01[,s] > 0)
     winners <- sample(x = donors, size = n.donate, replace = F)
     species.data01[winners,group.var] <- least.zone
@@ -153,9 +152,11 @@ if(smallest < 40){
 # also remember to log the area
 # species.data$logarea <- log(species.data$area)
 
-covars2d <- list(c("lon","lat"),
-                 c("sst","bathy"),
-                 c("chla","dhw"))
+covars2d <- list(
+  c("lon","lat")
+  # c("sst","bathy"),
+  # c("chla","dhw")
+)
 
 covars <- c(
   "sst",
@@ -169,7 +170,6 @@ maxnet.covars <- c(
   "chla",
   "dhw")
 
-# cofactors <- c("sponge","coral")
 
 maxnet2d <- list(c("sst", "bathy"),
                  c("chla", "dhw"))
@@ -191,28 +191,42 @@ hd <- quantile(species.data[species.data[, s] > 0, s], probs = 0.9)
 #                 dataCRS = raster.stack@crs,
 #                 title.name = figure.name)
 
+library(ggplot2)
 ggplot() + 
   geom_point(data = species.data, aes(lon, lat), alpha = 0.2, size = 0.1) + 
   geom_point(data = species.data[species.data[, s] > 0, ], aes(lon, lat), color = "red", alpha = 0.5) + 
   geom_point(data = species.data[species.data[, s] > hd, ], aes(lon, lat), color = "blue", alpha = 0.8) + 
   theme_bw() +
-  theme(axis.title = element_blank(),
-        axis.text = element_blank())
+  coord_fixed()
 
-
-ggsave(last_plot(), filename = paste0(species.path, "/dotplot.png"), width = 8, height = 3, units = "in")
+ggsave(last_plot(), filename = paste0(species.path, "/dotplot.png"), width = 7, height = 3, units = "in")
 
 # this looks cumbersome, but automates the gam formulas
+cofactors <- c("sponge","coral")
 basic.gam.table <- data.frame(
   
-  type = c(rep("smooth", length(covars2d) + length(covars)), rep("factor", length(cofactors)), "offset"), 
-  dims = c(rep(2, length(covars2d)), rep(1, length(covars) + length(cofactors) + 1)), 
-  term = c(unlist(lapply(covars2d, FUN = function(x){return(x[1])})), covars, cofactors, "logarea"), 
-  term2 = c(unlist(lapply(covars2d, FUN = function(x){return(x[2])})), rep(NA, length(covars) + length(cofactors) + 1)), 
-  bs = c(rep("ds", length(covars2d)), rep("tp", length(covars)), rep(NA, length(cofactors) + 1)), 
-  k = c(rep(10, length(covars2d)), rep(4, length(covars)), rep(NA, length(cofactors) + 1)), 
-  m = c(rep(1, length(covars2d) + length(covars)), rep(NA, length(cofactors) + 1)), 
-  m2 = c(rep(.5, length(covars2d)), rep(NA, length(covars) + length(cofactors) + 1))
+  # type = c(rep("smooth", length(covars2d) + length(covars)), rep("factor", length(cofactors)), "offset"), 
+  type = c(rep("smooth", length(covars2d) + length(covars))), 
+  # dims = c(rep(2, length(covars2d)), rep(1, length(covars) + length(cofactors) + 1)), 
+  dims = c(rep(2, length(covars2d)), rep(1, length(covars))), 
+  
+  # term = c(unlist(lapply(covars2d, FUN = function(x){return(x[1])})), covars, cofactors, "logarea"), 
+  term = c(unlist(lapply(covars2d, FUN = function(x){return(x[1])})), covars), 
+  
+  # term2 = c(unlist(lapply(covars2d, FUN = function(x){return(x[2])})), rep(NA, length(covars) + length(cofactors) + 1)), 
+  term2 = c(unlist(lapply(covars2d, FUN = function(x){return(x[2])})), rep(NA, length(covars))), 
+  
+  # bs = c(rep("ds", length(covars2d)), rep("tp", length(covars)), rep(NA, length(cofactors) + 1)), 
+  bs = c(rep("ds", length(covars2d)), rep("tp", length(covars))), 
+  
+  # k = c(rep(10, length(covars2d)), rep(4, length(covars)), rep(NA, length(cofactors) + 1)), 
+  k = c(rep(10, length(covars2d)), rep(4, length(covars))), 
+  
+  # m = c(rep(1, length(covars2d) + length(covars)), rep(NA, length(cofactors) + 1)), 
+  m = c(rep(1, length(covars2d) + length(covars))),
+  
+  # m2 = c(rep(.5, length(covars2d)), rep(NA, length(covars) + length(cofactors) + 1))
+  m2 = c(rep(.5, length(covars2d)), rep(NA, length(covars)))
   
 )
 
