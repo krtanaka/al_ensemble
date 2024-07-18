@@ -72,12 +72,12 @@ cat(paste0("Starting species: ",figure.name,"; Number ",i," of ",nrow(masterplan
 
 region <- "GOA"
 
-bathy <- raster::raster(paste0(EFH.path, "/Variables/Variables_", region, "_1km/Bathy"))
-slope <- raster::raster(paste0(EFH.path, "/Variables/Variables_", region, "_1km/Slope"))
-tmax <- raster::raster(paste0(EFH.path, "/Variables/Variables_", region, "_1km/Tmax"))
-btemp <- raster::raster(paste0(EFH.path, "/Variables/Variables_", region, "_1km/Btemp"))
+bathy <- raster::raster(paste0(EFH.path, "/Variables/goa/Variables_", region, "_1km/Bathy"))
+slope <- raster::raster(paste0(EFH.path, "/Variables/goa/Variables_", region, "_1km/Slope"))
+tmax <- raster::raster(paste0(EFH.path, "/Variables/goa/Variables_", region, "_1km/Tmax"))
+btemp <- raster::raster(paste0(EFH.path, "/Variables/goa/Variables_", region, "_1km/Btemp"))
 btemp <- raster::crop(x = btemp, y = bathy)
-BPI <- raster::raster(paste0(EFH.path, "/Variables/Variables_", region, "_1km/BPI"))
+BPI <- raster::raster(paste0(EFH.path, "/Variables/goa/Variables_", region, "_1km/BPI"))
 BPI <- raster::crop(x = BPI, y = bathy)
 
 lat <- raster::init(bathy, v ='y')
